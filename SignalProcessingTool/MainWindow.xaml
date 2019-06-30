@@ -1,0 +1,51 @@
+﻿<Window x:Class="SignalProcessingTool.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        xmlns:local="clr-namespace:SignalProcessingTool"
+        
+        mc:Ignorable="d"
+        Title="SignalProcessingTool" Height="900" Width="1600">
+
+    <Window.DataContext>
+        <local:MainViewModel/>
+    </Window.DataContext>
+
+    <Grid Name="grid1" Margin="0,0,48.286,-0.571">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="0*"/>
+        </Grid.ColumnDefinitions>
+        <Button x:Name="btnCalcStart" Content="Calculate" HorizontalAlignment="Left" Margin="10,822,0,0" VerticalAlignment="Top" Width="394" Click="BtnCalcStart_Click" Height="28"/>
+        <GroupBox x:Name="groupParams" Header="Pipe parameters" HorizontalAlignment="Left" Height="806" Margin="10,10,0,0" VerticalAlignment="Top" Width="394">
+            <Grid HorizontalAlignment="Left" Height="786" Margin="0,10,-1.143,-13.143" VerticalAlignment="Top" Width="384">
+                <TextBox HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+                <TextBox HorizontalAlignment="Left" Height="23" Margin="10,38,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+                <TextBox HorizontalAlignment="Left" Height="23" Margin="10,66,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+            </Grid>
+        </GroupBox>
+
+
+        <oxy:Plot Title="{Binding Title}" Margin="438,10,1.714,22">
+            <oxy:Plot.Axes>
+                <oxy:LinearAxis Position="Left"/>
+                <oxy:LinearAxis Position="Bottom"/>
+            </oxy:Plot.Axes>
+            <oxy:Plot.Series>
+                <oxy:LineSeries Title="Series1" DataFieldX="xPoint"
+                        DataFieldY="yPoint"
+                        ItemsSource="{Binding Points}"
+                        StrokeThickness="2" 
+                        Color="Blue" />
+                <oxy:LineSeries Title="Series2" DataFieldX="xPoint"
+                        DataFieldY="yPointMax"
+                        ItemsSource="{Binding Points}"
+                        LineStyle="Dash" StrokeThickness="2"
+                        Color="Red" />
+            </oxy:Plot.Series>
+
+        </oxy:Plot>
+    </Grid>
+</Window>
