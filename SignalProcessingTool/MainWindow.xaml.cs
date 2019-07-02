@@ -25,7 +25,7 @@ namespace SignalProcessingTool
     using OxyPlot.Series;
     using OxyPlot.Axes;
     using System.Collections.ObjectModel;
-
+    
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -34,67 +34,114 @@ namespace SignalProcessingTool
         public MainWindow()
         {
             InitializeComponent();
-
         }
 
         private void BtnCalcStart_Click(object sender, RoutedEventArgs e)
         {
-            AcousticModel model1 = new AcousticModel();
-            
             CalculateImpulse();
         }
 
         public void CalculateImpulse()
         {
-
+            double pi = Math.PI;
+            double func = 0;
             
+            double diameter = 0.038;
+            double thickness = 0.003;
+            double density = 7800;
+            double speed = 0;
+            double area = 0.3;
+            double pipeLength = 10;
+            double xCoordinate = pipeLength/1.6;
+            
+            double a1 = 10;
+            double a2 = 10;
+            double a3 = 5000000;
+            double signalDuration = 1;
+            double timeContact = 0.00004;
+            double ti = 0.000022;
+            double Fd = 44100;
+
+            double modNumber = 500;
+
+            double[] Cn = new double[500];
+            double[] delta = new double[500];
+            double[] modFrequency = new double[500];
+            double[] Oi = new double[500];
+            double[] sum = new double[88200];
+
+            double E = 200 * Math.Pow(10, 9);
+            double J = pi * Math.Pow(diameter, 3) * (double)thickness / 8;
+            double Mass = density * pi * diameter * thickness;
+            double a4 = E * J / Mass;
+           
+            int k = 0;
+
+            for (int i = 1; i < modNumber; i = i + 2)
+            {
+                Cn[k] = pi / 2 * (2 * i + 1);
+                delta[k] = 0.5 * (a1 * Math.Pow(i, 1) * Math.Pow(pi, 4) / Math.Pow(pipeLength, 4) + a2);
+                modFrequency[k] = Math.Sqrt(a3 + a4 * Math.Pow(i, 4) * Math.Pow(pi, 4) / Math.Pow(pipeLength, 4));
+                Oi[k] = Math.Sqrt(Math.Pow(modFrequency[k], 2) - Math.Pow(delta[k], 2));
+                k++;
+            }
+
+            k = 0;
+
+            int m = 0;
+
+            for (int i = 1; i < signalDuration * Fd; i++)
+            {
+                for (int j = 1; j < modNumber; j = j + 2)
+                {
+                    sum[m] = sum[m] + 
+                    Math.Pow(-1, (j - 1) / 2) * 
+                    Math.Exp(-delta[k] * ti) * 
+                    Math.Sin(j * pi * xCoordinate / pipeLength) /
+                    (Math.Pow((Math.Pow(modFrequency[k], 2) - Math.Pow(pi, 2) / Math.Pow(timeContact, 2)), 2) + 
+                    4 * Math.Pow(pi, 2) * Math.Pow(delta[k], 2) / Math.Pow(timeContact, 2)) *
+                    ((2 * Math.Exp(delta[k] * timeContact) * 
+                    delta[k] * pi / timeContact * Math.Cos(Oi[k] * timeContact) - 
+                    pi * Math.Exp(delta[k] * timeContact) / timeContact / Oi[k] *
+                    (2 * Math.Pow(delta[k], 2) - Math.Pow(modFrequency[k], 2) + 
+                    Math.Pow(pi, 2) / timeContact / timeContact) * Math.Sin(Oi[k] * timeContact) +
+                    2 * pi * delta[k] / timeContact) * Math.Cos(Oi[k] * ti) +
+                    (pi * Math.Exp(delta[k] * timeContact) / timeContact / Oi[k] * (2 * Math.Pow(delta[k], 2) - 
+                    Math.Pow(modFrequency[k], 2) + Math.Pow(pi, 2) / timeContact / timeContact) * Math.Cos(Oi[k] * timeContact) +
+                    2 * Math.Exp(delta[k] * timeContact) * delta[k] * pi / timeContact * Math.Sin(Oi[k] * timeContact) + 
+                    pi / timeContact / Oi[k] * (2 * Math.Pow(delta[k], 2) - Math.Pow(modFrequency[k], 2) +
+                    Math.Pow(pi, 2) / timeContact / timeContact)) * Math.Sin(Oi[k] * ti));
+                        
+                    k++;                   
+                }
+
+                k = 0;
+                m++;
+                ti = ti + (double) (1 / Fd);
+            }
+
+            DrawImpulse(signalDuration * Fd - 1, sum);
         }
 
-    }
-
-    public class MainViewModel
-    {
-        public MainViewModel()
+        void DrawImpulse(double xPointsCount, double[] valuesArray)
         {
-            this.Points = new Collection<PointClass>();
-            const int N = 4096;
+            Collection<PointClass> Points = new Collection<PointClass>();
 
-            for (double i = 0; i < 1; i = i + 0.001)
-            {               
-                this.Points.Add(
+            Plot1.Series[0].ItemsSource = Points;
+
+            for (int i = 0; i < xPointsCount; i = i + 1)
+            {
+                Points.Add(
                 new PointClass
                 {
                     xPoint = i,
-                    yPoint = Math.Sin(i*10),
-                    yPointMax = Math.Sin(i * 10)/2
-                    
+                    yPoint = valuesArray[i],
                 });
             }
+
+            Plot1.InvalidatePlot(true);
         }
 
-        public Collection<PointClass> Points { get; private set; }
-
-        public string Subtitle { get; set; }
-
-    }
-
-    public class AcousticModel
-    {
-        public double Func { get; set; }
-        public double Time { get; set; }
-        public double Mass { get; set; }
-        public double Speed { get; set; }
-        public double Density { get; set; }
-        public double Area { get; set; }
-        public double PipeLength { get; set; }
-        public double Tau { get; set; }
-        public double xCoordinate { get; set; }
-        public double modNumber { get; set; }
-        public double modFrequency { get; set; }
-        public double Delta { get; set; }
-        public double A1 { get; set; }
-        public double A2 { get; set; }
-        public double A3 { get; set; }
     }
 
     public class PointClass

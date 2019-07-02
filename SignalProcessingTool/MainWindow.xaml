@@ -9,9 +9,7 @@
         mc:Ignorable="d"
         Title="SignalProcessingTool" Height="900" Width="1600">
 
-    <Window.DataContext>
-        <local:MainViewModel/>
-    </Window.DataContext>
+    
 
     <Grid Name="grid1" Margin="0,0,48.286,-0.571">
         <Grid.ColumnDefinitions>
@@ -27,17 +25,16 @@
             </Grid>
         </GroupBox>
 
-
-        <oxy:Plot Title="{Binding Title}" Margin="438,10,1.714,22">
+        <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="438,10,1.714,22">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
             </oxy:Plot.Axes>
             <oxy:Plot.Series>
-                <oxy:LineSeries Title="Series1" DataFieldX="xPoint"
+                <oxy:LineSeries Name="Series1" Title="Series1" DataFieldX="xPoint"
                         DataFieldY="yPoint"
                         ItemsSource="{Binding Points}"
-                        StrokeThickness="2" 
+                        StrokeThickness="1" 
                         Color="Blue" />
                 <oxy:LineSeries Title="Series2" DataFieldX="xPoint"
                         DataFieldY="yPointMax"
