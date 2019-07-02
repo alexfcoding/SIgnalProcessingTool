@@ -9,7 +9,7 @@
         mc:Ignorable="d"
         Title="SignalProcessingTool" Height="900" Width="1600">
 
-    
+
 
     <Grid Name="grid1" Margin="0,0,48.286,-0.571">
         <Grid.ColumnDefinitions>
@@ -25,7 +25,7 @@
             </Grid>
         </GroupBox>
 
-        <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="438,10,1.714,22">
+        <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="438,10,1.5,487.071">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -39,7 +39,26 @@
                 <oxy:LineSeries Title="Series2" DataFieldX="xPoint"
                         DataFieldY="yPointMax"
                         ItemsSource="{Binding Points}"
-                        LineStyle="Dash" StrokeThickness="2"
+                        LineStyle="Dash" StrokeThickness="1"
+                        Color="Red" />
+            </oxy:Plot.Series>
+
+        </oxy:Plot>
+
+        <oxy:Plot Name="Plot2" Title="{Binding Title}" Margin="440,474,-0.5,23.071" Grid.ColumnSpan="2">
+            <oxy:Plot.Axes>
+                <oxy:LinearAxis Position="Left"/>
+                <oxy:LinearAxis Position="Bottom"/>
+            </oxy:Plot.Axes>
+
+            <oxy:Plot.Series>
+                <oxy:LineSeries Name="Series3" Title="Series1" DataFieldX="xPoint"
+                        DataFieldY="yPoint"
+                        StrokeThickness="1" 
+                        Color="Blue" />
+                <oxy:LineSeries Title="Series4" DataFieldX="xPoint"
+                        DataFieldY="yPointMax"
+                        LineStyle="Dash" StrokeThickness="1"
                         Color="Red" />
             </oxy:Plot.Series>
 
