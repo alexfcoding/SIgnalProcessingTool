@@ -58,7 +58,7 @@ namespace SignalProcessingTool
             double a2 = 10;
             double a3 = 5000000;
             double signalDuration = 1;
-            double timeContact = 0.00004;
+            double tc = 0.00004;
             double ti = 0.000022;
             double Fd = 44100;
 
@@ -66,7 +66,7 @@ namespace SignalProcessingTool
 
             double[] Cn = new double[500];
             double[] delta = new double[500];
-            double[] modFrequency = new double[500];
+            double[] W = new double[500];
             double[] Oi = new double[500];
             double[] sum = new double[88200];
 
@@ -81,42 +81,39 @@ namespace SignalProcessingTool
             {
                 Cn[k] = pi / 2 * (2 * i + 1);
                 delta[k] = 0.5 * (a1 * Math.Pow(i, 1) * Math.Pow(pi, 4) / Math.Pow(pipeLength, 4) + a2);
-                modFrequency[k] = Math.Sqrt(a3 + a4 * Math.Pow(i, 4) * Math.Pow(pi, 4) / Math.Pow(pipeLength, 4));
-                Oi[k] = Math.Sqrt(Math.Pow(modFrequency[k], 2) - Math.Pow(delta[k], 2));
+                W[k] = Math.Sqrt(a3 + a4 * Math.Pow(i, 4) * Math.Pow(pi, 4) / Math.Pow(pipeLength, 4));
+                Oi[k] = Math.Sqrt(Math.Pow(W[k], 2) - Math.Pow(delta[k], 2));
                 k++;
             }
 
             k = 0;
 
-            int m = 0;
+            double m1, m2, m3, rotator;
 
             for (int i = 1; i < signalDuration * Fd; i++)
             {
                 for (int j = 1; j < modNumber; j = j + 2)
                 {
-                    sum[m] = sum[m] + 
-                    Math.Pow(-1, (j - 1) / 2) * 
-                    Math.Exp(-delta[k] * ti) * 
-                    Math.Sin(j * pi * xCoordinate / pipeLength) /
-                    (Math.Pow((Math.Pow(modFrequency[k], 2) - Math.Pow(pi, 2) / Math.Pow(timeContact, 2)), 2) + 
-                    4 * Math.Pow(pi, 2) * Math.Pow(delta[k], 2) / Math.Pow(timeContact, 2)) *
-                    ((2 * Math.Exp(delta[k] * timeContact) * 
-                    delta[k] * pi / timeContact * Math.Cos(Oi[k] * timeContact) - 
-                    pi * Math.Exp(delta[k] * timeContact) / timeContact / Oi[k] *
-                    (2 * Math.Pow(delta[k], 2) - Math.Pow(modFrequency[k], 2) + 
-                    Math.Pow(pi, 2) / timeContact / timeContact) * Math.Sin(Oi[k] * timeContact) +
-                    2 * pi * delta[k] / timeContact) * Math.Cos(Oi[k] * ti) +
-                    (pi * Math.Exp(delta[k] * timeContact) / timeContact / Oi[k] * (2 * Math.Pow(delta[k], 2) - 
-                    Math.Pow(modFrequency[k], 2) + Math.Pow(pi, 2) / timeContact / timeContact) * Math.Cos(Oi[k] * timeContact) +
-                    2 * Math.Exp(delta[k] * timeContact) * delta[k] * pi / timeContact * Math.Sin(Oi[k] * timeContact) + 
-                    pi / timeContact / Oi[k] * (2 * Math.Pow(delta[k], 2) - Math.Pow(modFrequency[k], 2) +
-                    Math.Pow(pi, 2) / timeContact / timeContact)) * Math.Sin(Oi[k] * ti));
+                    rotator = Math.Pow(-1, (j - 1) / 2);
+
+                    m1 = 2 * Math.Exp(delta[k] * tc) * delta[k] * pi / tc;
+
+                    m2 = pi * Math.Exp(delta[k] * tc) / tc / Oi[k] * (2 * Math.Pow(delta[k], 2) - Math.Pow(W[k], 2) + Math.Pow(pi, 2) / Math.Pow(tc, 2));
+
+                    m3 = Oi[k] * tc;
+
+                    sum[i] = sum[i] + rotator * Math.Exp(-delta[k] * ti) * Math.Sin(j * pi * xCoordinate / pipeLength) /
+                    (Math.Pow((Math.Pow(W[k], 2) - Math.Pow(pi, 2) / Math.Pow(tc, 2)), 2) + 4 * Math.Pow(pi, 2) * Math.Pow(delta[k], 2) / Math.Pow(tc, 2)) *
+
+                    ((m1 * Math.Cos(m3) - m2 * Math.Sin(m3) + 2 * pi * delta[k] / tc) * Math.Cos(Oi[k] * ti) + (m2 * Math.Cos(m3) + m1 * Math.Sin(m3) + 
+                    pi / tc / Oi[k] * (2 * Math.Pow(delta[k], 2) - Math.Pow(W[k], 2) +
+                    Math.Pow(pi, 2) / Math.Pow(tc, 2))) * Math.Sin(Oi[k] * ti));
                         
                     k++;                   
                 }
 
                 k = 0;
-                m++;
+               
                 ti = ti + (double) (1 / Fd);
             }
 
