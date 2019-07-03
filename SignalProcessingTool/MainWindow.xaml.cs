@@ -15,7 +15,7 @@ using System.Windows.Shapes;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Drawing;
 using System.Diagnostics;
-
+using DSPLib;
 
 namespace SignalProcessingTool
 {
@@ -25,6 +25,7 @@ namespace SignalProcessingTool
     using OxyPlot.Series;
     using OxyPlot.Axes;
     using System.Collections.ObjectModel;
+    using System.Numerics;
 
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -57,47 +58,102 @@ namespace SignalProcessingTool
             Model1.SignalDuration = 1;
             Model1.Tc = 0.00004;
             Model1.Ti = 0.000022;
-            Model1.Fd1 = 44100;
+            Model1.Fd = 44100;
             Model1.ModNumber = 500;
-            Model1.Cn1 = new double[500];
+            Model1.Cn = new double[500];
             Model1.Delta = new double[500];
-            Model1.W1 = new double[500];
-            Model1.Oi1 = new double[500];
+            Model1.W = new double[500];
+            Model1.Oi = new double[500];
             Model1.Sum = new double[44100];
 
             Model1.XCoordinate = Model1.PipeLength / 1.6;
-            Model1.E1 = 200 * Math.Pow(10, 9);
-            Model1.J1 = Model1.Pi * Math.Pow(Model1.Diameter, 3) * (double) Model1.Thickness / 8;
-            Model1.Mass1 = Model1.Density * Model1.Pi * Model1.Diameter * Model1.Thickness;
-            Model1.A4 = Model1.E1 * Model1.J1 / Model1.Mass1;
+            Model1.E = 200 * Math.Pow(10, 9);
+            Model1.J = Model1.Pi * Math.Pow(Model1.Diameter, 3) * (double) Model1.Thickness / 8;
+            Model1.Mass = Model1.Density * Model1.Pi * Model1.Diameter * Model1.Thickness;
+            Model1.A4 = Model1.E * Model1.J / Model1.Mass;
 
             Model1.ComputeModel();
 
-            DrawImpulse(Model1.SignalDuration * Model1.Fd1 - 1, Model1.Sum);
-            //Plot2.Series[0].ItemsSource = Model1.Points;
+            Collection<PointClass> pointsImpulse = new Collection<PointClass>();
+            DrawImpulse(pointsImpulse, Model1.Sum, false, Plot1);
 
+            double[] fftValues = FastFourier(Model1.Sum, false).Item1;
+            double[] fftFreq = FastFourier(Model1.Sum, false).Item2;
+
+            Collection<PointClass> pointsSpectrum = new Collection<PointClass>();
+            DrawImpulse(pointsSpectrum, fftValues, true, Plot2, fftFreq);
         }
 
-        void DrawImpulse(double xPointsCount, double[] valuesArray)
+        void DrawImpulse(Collection<PointClass> pointCollection, double[] valuesArray, bool isSpectrum, OxyPlot.Wpf.Plot plotToDraw, double[]fftFreq = null)
         {
-            Collection<PointClass> Points = new Collection<PointClass>();
+            plotToDraw.Series[0].ItemsSource = pointCollection;
 
-            Plot1.Series[0].ItemsSource = Points;
-
-            for (int i = 0; i < xPointsCount; i = i + 1)
+            for (int i = 0; i < valuesArray.Length; i = i + 1)
             {
-                Points.Add(
-                new PointClass
+                if (isSpectrum == false)
                 {
-                    xPoint = i,
-                    yPoint = valuesArray[i],
-                });
+                    pointCollection.Add(
+                    new PointClass
+                    {
+                        xPoint = i,
+                        yPoint = valuesArray[i],
+                    });
+                }
+                else
+                {
+                    pointCollection.Add(
+                    new PointClass
+                    {
+                        xPoint = fftFreq[i],
+                        yPoint = valuesArray[i],
+                    });
+                }
             }
 
-            Plot1.InvalidatePlot(true);
+            plotToDraw.InvalidatePlot(true);
         }
 
+        Tuple<double[],double[]> FastFourier(double[] inputArray, bool logScale)
+        {
+            double[] tempArray = new double[2048];
 
+            for (int i = 0; i < 2048; i++)
+            {
+                tempArray[i] = inputArray[i];
+            }
+
+            UInt32 length = 2048;
+            double samplingRate = 44100;
+            double[] spectrum = new double[4096];
+            double[] wCoefs = DSP.Window.Coefficients(DSP.Window.Type.Hamming, length);
+            double[] wInputData = DSP.Math.Multiply(tempArray, wCoefs);
+            double wScaleFactor = DSP.Window.ScaleFactor.Signal(wCoefs);
+
+            DSPLib.FFT fft = new DSPLib.FFT();
+
+            fft.Initialize(length, length * 3);
+
+            Complex[] cSpectrum = fft.Execute(wInputData);
+            spectrum = DSP.ConvertComplex.ToMagnitude(cSpectrum);
+
+            if (logScale == true)
+            {
+                spectrum = DSP.ConvertMagnitude.ToMagnitudeDBV(spectrum);
+
+                for (int i = 0; i < spectrum.Length; i++)
+                {
+                    spectrum[i] -= 51;
+                }
+            }
+
+            spectrum = DSP.Math.Multiply(spectrum, wScaleFactor);
+
+            double[] freqSpan = fft.FrequencySpan(samplingRate);
+
+            var tuple = new Tuple<double[], double[]>(spectrum, freqSpan);
+            
+            return tuple;
+        }
     }
 
     public class AcousticModel
@@ -117,16 +173,16 @@ namespace SignalProcessingTool
             SignalDuration = signalDuration;
             Tc = tc;
             Ti = ti;
-            Fd1 = fd1;
+            Fd = fd1;
             ModNumber = modNumber;
-            Cn1 = cn1;
+            Cn = cn1;
             Delta = delta;
-            W1 = w1;
-            Oi1 = oi1;
+            W = w1;
+            Oi = oi1;
             Sum = sum;
-            E1 = e1;
-            J1 = j1;
-            Mass1 = mass1;
+            E = e1;
+            J = j1;
+            Mass = mass1;
             A4 = a4;
             Pi = pi;
         }
@@ -137,10 +193,10 @@ namespace SignalProcessingTool
 
             for (int i = 1; i < ModNumber; i = i + 2)
             {
-                Cn1[k] = Pi / 2 * (2 * i + 1);
+                Cn[k] = Pi / 2 * (2 * i + 1);
                 Delta[k] = 0.5 * (A1 * Math.Pow(i, 1) * Math.Pow(Pi, 4) / Math.Pow(PipeLength, 4) + A2);
-                W1[k] = Math.Sqrt(A3 + A4 * Math.Pow(i, 4) * Math.Pow(Pi, 4) / Math.Pow(PipeLength, 4));
-                Oi1[k] = Math.Sqrt(Math.Pow(W1[k], 2) - Math.Pow(Delta[k], 2));
+                W[k] = Math.Sqrt(A3 + A4 * Math.Pow(i, 4) * Math.Pow(Pi, 4) / Math.Pow(PipeLength, 4));
+                Oi[k] = Math.Sqrt(Math.Pow(W[k], 2) - Math.Pow(Delta[k], 2));
                 k++;
             }
 
@@ -148,7 +204,7 @@ namespace SignalProcessingTool
 
             double m1, m2, m3, rotator;
 
-            for (int i = 1; i < SignalDuration * Fd1; i++)
+            for (int i = 1; i < SignalDuration * Fd; i++)
             {
                 for (int j = 1; j < ModNumber; j = j + 2)
                 {
@@ -156,25 +212,23 @@ namespace SignalProcessingTool
 
                     m1 = 2 * Math.Exp(Delta[k] * Tc) * Delta[k] * Pi / Tc;
 
-                    m2 = Pi * Math.Exp(Delta[k] * Tc) / Tc / Oi1[k] * (2 * Math.Pow(Delta[k], 2) - Math.Pow(W1[k], 2) + Math.Pow(Pi, 2) / Math.Pow(Tc, 2));
+                    m2 = Pi * Math.Exp(Delta[k] * Tc) / Tc / Oi[k] * (2 * Math.Pow(Delta[k], 2) - Math.Pow(W[k], 2) + Math.Pow(Pi, 2) / Math.Pow(Tc, 2));
 
-                    m3 = Oi1[k] * Tc;
+                    m3 = Oi[k] * Tc;
 
                     Sum[i] = Sum[i] + rotator * Math.Exp(-Delta[k] * Ti) * Math.Sin(j * Pi * XCoordinate / PipeLength) /
-                    (Math.Pow((Math.Pow(W1[k], 2) - Math.Pow(Pi, 2) / Math.Pow(Tc, 2)), 2) + 4 * Math.Pow(Pi, 2) * Math.Pow(Delta[k], 2) / Math.Pow(Tc, 2)) *
+                    (Math.Pow((Math.Pow(W[k], 2) - Math.Pow(Pi, 2) / Math.Pow(Tc, 2)), 2) + 4 * Math.Pow(Pi, 2) * Math.Pow(Delta[k], 2) / Math.Pow(Tc, 2)) *
 
-                    ((m1 * Math.Cos(m3) - m2 * Math.Sin(m3) + 2 * Pi * Delta[k] / Tc) * Math.Cos(Oi1[k] * Ti) + (m2 * Math.Cos(m3) + m1 * Math.Sin(m3) +
-                    Pi / Tc / Oi1[k] * (2 * Math.Pow(Delta[k], 2) - Math.Pow(W1[k], 2) + Math.Pow(Pi, 2) / Math.Pow(Tc, 2))) * Math.Sin(Oi1[k] * Ti));
+                    ((m1 * Math.Cos(m3) - m2 * Math.Sin(m3) + 2 * Pi * Delta[k] / Tc) * Math.Cos(Oi[k] * Ti) + (m2 * Math.Cos(m3) + m1 * Math.Sin(m3) +
+                    Pi / Tc / Oi[k] * (2 * Math.Pow(Delta[k], 2) - Math.Pow(W[k], 2) + Math.Pow(Pi, 2) / Math.Pow(Tc, 2))) * Math.Sin(Oi[k] * Ti));
 
                     k++;
                 }
 
                 k = 0;
                 
-                Ti = Ti + (double)(1 / Fd1);
+                Ti = Ti + (double)(1 / Fd);
             }
-
-            //DrawImpulse(signalDuration * Fd - 1, sum);
         }
 
         public double Diameter { get; set; }
@@ -188,16 +242,16 @@ namespace SignalProcessingTool
         public double SignalDuration { get; set; }
         public double Tc { get; set; }
         public double Ti { get; set; }
-        public double Fd1 { get; set; }
+        public double Fd { get; set; }
         public double ModNumber { get; set; }
-        public double[] Cn1 { get; set; }
+        public double[] Cn { get; set; }
         public double[] Delta { get; set; }
-        public double[] W1 { get; set; }
-        public double[] Oi1 { get; set; }
+        public double[] W { get; set; }
+        public double[] Oi { get; set; }
         public double[] Sum { get; set; }
-        public double E1 { get; set; }
-        public double J1 { get; set; }
-        public double Mass1 { get; set; }
+        public double E { get; set; }
+        public double J { get; set; }
+        public double Mass { get; set; }
         public double A4 { get; set; }
         public double Pi { get; set; }
     }
@@ -208,4 +262,5 @@ namespace SignalProcessingTool
         public double yPoint { get; set; }
         public double yPointMax { get; set; }
     }
+
 }
