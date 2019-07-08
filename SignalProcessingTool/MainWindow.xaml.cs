@@ -55,7 +55,7 @@ namespace SignalProcessingTool
             Model1.A1 = 10;
             Model1.A2 = 10;
             Model1.A3 = 5000000;
-            Model1.SignalDuration = 1;
+            Model1.SignalDuration = 0.5f;
             Model1.Tc = 0.00004;
             Model1.Ti = 0.000022;
             Model1.Fd = 44100;
@@ -74,50 +74,52 @@ namespace SignalProcessingTool
 
             Model1.ComputeModel();
 
-            Collection<PointClass> pointsImpulse = new Collection<PointClass>();
-            DrawImpulse(pointsImpulse, Model1.Sum, false, Plot1);
-
-            //double[] fftValues = FastFourier(Model1.Sum, false).Item1;
-            //double[] fftFreq = FastFourier(Model1.Sum, false).Item2;
             double[] fftValues = FFTMathNumerics(Model1.Sum).Item1;
             double[] fftFreq = FFTMathNumerics(Model1.Sum).Item2;
-
+            Complex[] fftComplex = FFTMathNumerics(Model1.Sum).Item3;
 
             Collection<PointClass> pointsSpectrum = new Collection<PointClass>();
-            // DrawImpulse(pointsSpectrum, fftValues, true, Plot2, fftFreq);
-            DrawImpulse(pointsSpectrum, fftValues, false, Plot2);
+            DrawSpectrum(pointsSpectrum, fftValues, Plot2, fftFreq);
+
+            Collection<PointClass> pointsImpulse = new Collection<PointClass>();
+            DrawImpulse(pointsImpulse, InverseFFTMathNumerics(fftComplex), Plot1);
         }
 
-        void DrawImpulse(Collection<PointClass> pointCollection, double[] valuesArray, bool isSpectrum, OxyPlot.Wpf.Plot plotToDraw, double[]fftFreq = null)
+        void DrawImpulse(Collection<PointClass> pointCollection, double[] valuesArray, OxyPlot.Wpf.Plot plotToDraw)
         {
             plotToDraw.Series[0].ItemsSource = pointCollection;
 
             for (int i = 0; i < valuesArray.Length; i = i + 1)
             {
-                if (isSpectrum == false)
-                {
                     pointCollection.Add(
                     new PointClass
                     {
                         xPoint = i,
                         yPoint = valuesArray[i],
                     });
-                }
-                else
-                {
+            }
+
+            plotToDraw.InvalidatePlot(true);
+        }
+
+        void DrawSpectrum(Collection<PointClass> pointCollection, double[] valuesArray, OxyPlot.Wpf.Plot plotToDraw, double[] fftFreq = null)
+        {
+            plotToDraw.Series[0].ItemsSource = pointCollection;
+
+            for (int i = 0; i < valuesArray.Length / 2; i = i + 1)
+            {
                     pointCollection.Add(
                     new PointClass
                     {
                         xPoint = fftFreq[i],
                         yPoint = valuesArray[i],
                     });
-                }
             }
 
             plotToDraw.InvalidatePlot(true);
         }
 
-        Tuple<double[], double[]> FastFourier(double[] inputArray, bool logScale)
+        Tuple<double[],double[]> FastFourierDSPLib(double[] inputArray, bool logScale)
         {
             double[] tempArray = new double[2048];
 
@@ -159,7 +161,7 @@ namespace SignalProcessingTool
             return tuple;
         }
 
-        Tuple<double[], double[]> FFTMathNumerics (double[] inputArray)
+        Tuple<double[], double[], Complex[]> FFTMathNumerics (double[] inputArray)
         {
             double[] tempArray = new double[32768];
 
@@ -169,28 +171,38 @@ namespace SignalProcessingTool
             }
 
             Complex[] complexInput = new Complex[tempArray.Length];
+
             for (int i = 0; i < complexInput.Length; i++)
             {
                 Complex tmp = new Complex(tempArray[i], 0);
                 complexInput[i] = tmp;
             }
 
+           
             MathNet.Numerics.IntegralTransforms.Fourier.Forward(complexInput);
-
-            //do some stuff
-
-            MathNet.Numerics.IntegralTransforms.Fourier.Inverse(complexInput);
-
+            
             double[] outSamples = new double[complexInput.Length];
 
             for (int i = 0; i < outSamples.Length; i++)
-                outSamples[i] = (double)complexInput[i].Real;
+                outSamples[i] = (double)complexInput[i].Magnitude;
 
             double[] freqSpan = MathNet.Numerics.IntegralTransforms.Fourier.FrequencyScale(32768, 44100);
 
-            var tuple = new Tuple<double[], double[]>(outSamples, freqSpan);
+            var tuple = new Tuple<double[], double[], Complex[]>(outSamples, freqSpan, complexInput);
 
             return tuple;
+        }
+
+        double[] InverseFFTMathNumerics (Complex[] inputSpectrum)
+        {
+            MathNet.Numerics.IntegralTransforms.Fourier.Inverse(inputSpectrum);
+
+            double[] outSamples = new double[inputSpectrum.Length];
+
+            for (int i = 0; i < outSamples.Length; i++)
+                outSamples[i] = (double)inputSpectrum[i].Real;
+
+            return outSamples;
         }
     }
 
