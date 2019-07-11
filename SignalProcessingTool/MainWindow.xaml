@@ -25,7 +25,7 @@
             </Grid>
         </GroupBox>
 
-        <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="438,10,1.5,487.071">
+        <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="430,25,9.714,686">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -45,7 +45,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot2" Title="{Binding Title}" Margin="440,474,-0.5,23.071" Grid.ColumnSpan="2">
+        <oxy:Plot Name="Plot2" Title="{Binding Title}" Margin="430,209,9.714,503">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -57,6 +57,44 @@
                         StrokeThickness="1" 
                         Color="Blue" />
                 <oxy:LineSeries Title="Series4" DataFieldX="xPoint"
+                        DataFieldY="yPointMax"
+                        LineStyle="Dash" StrokeThickness="1"
+                        Color="Red" />
+            </oxy:Plot.Series>
+
+        </oxy:Plot>
+
+        <oxy:Plot Name="Plot3" Title="{Binding Title}" Margin="432,393,7.714,319">
+            <oxy:Plot.Axes>
+                <oxy:LinearAxis Position="Left"/>
+                <oxy:LinearAxis Position="Bottom"/>
+            </oxy:Plot.Axes>
+
+            <oxy:Plot.Series>
+                <oxy:LineSeries Name="Series4" Title="Series1" DataFieldX="xPoint"
+                        DataFieldY="yPoint"
+                        StrokeThickness="1" 
+                        Color="Blue" />
+                <oxy:LineSeries Title="Series5" DataFieldX="xPoint"
+                        DataFieldY="yPointMax"
+                        LineStyle="Dash" StrokeThickness="1"
+                        Color="Red" />
+            </oxy:Plot.Series>
+
+        </oxy:Plot>
+
+        <oxy:Plot Name="Plot4" Title="{Binding Title}" Margin="430,574,9.714,138">
+            <oxy:Plot.Axes>
+                <oxy:LinearAxis Position="Left"/>
+                <oxy:LinearAxis Position="Bottom"/>
+            </oxy:Plot.Axes>
+
+            <oxy:Plot.Series>
+                <oxy:LineSeries Name="Series5" Title="Series1" DataFieldX="xPoint"
+                        DataFieldY="yPoint"
+                        StrokeThickness="1" 
+                        Color="Blue" />
+                <oxy:LineSeries Title="Series6" DataFieldX="xPoint"
                         DataFieldY="yPointMax"
                         LineStyle="Dash" StrokeThickness="1"
                         Color="Red" />

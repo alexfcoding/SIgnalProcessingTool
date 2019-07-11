@@ -78,11 +78,25 @@ namespace SignalProcessingTool
             double[] fftFreq = FFTMathNumerics(Model1.Sum).Item2;
             Complex[] fftComplex = FFTMathNumerics(Model1.Sum).Item3;
 
+            Collection<PointClass> pointsFirstImpulse = new Collection<PointClass>();
+            DrawImpulse(pointsFirstImpulse, Model1.Sum, Plot1);
+
             Collection<PointClass> pointsSpectrum = new Collection<PointClass>();
             DrawSpectrum(pointsSpectrum, fftValues, Plot2, fftFreq);
+                        
+            Complex[] equalizedSignal = Equalize(fftComplex);
+
+            double[] fftValuesEq = new double[32768];
+
+            for (int i = 0; i < fftValuesEq.Length; i++)
+                fftValuesEq[i] = (double)equalizedSignal[i].Magnitude;
+            
+            Collection<PointClass> pointsSpectrumEq = new Collection<PointClass>();
+            DrawSpectrum(pointsSpectrumEq, fftValuesEq, Plot3, fftFreq);
 
             Collection<PointClass> pointsImpulse = new Collection<PointClass>();
-            DrawImpulse(pointsImpulse, InverseFFTMathNumerics(fftComplex), Plot1);
+            DrawImpulse(pointsImpulse, InverseFFTMathNumerics(equalizedSignal), Plot4);
+
         }
 
         void DrawImpulse(Collection<PointClass> pointCollection, double[] valuesArray, OxyPlot.Wpf.Plot plotToDraw)
@@ -203,6 +217,23 @@ namespace SignalProcessingTool
                 outSamples[i] = (double)inputSpectrum[i].Real;
 
             return outSamples;
+        }
+
+        Complex[] Equalize(Complex[] inputSpectrum)
+        {
+            double frequency = 500;
+
+            double frequencyNumber = frequency / (44100f / 32768f);
+
+            for (int i = 0; i < inputSpectrum.Length; i++)
+            {
+                if (i > frequencyNumber)
+                {
+                    inputSpectrum[i] = 0;
+                }
+            }
+
+            return inputSpectrum;
         }
     }
 
