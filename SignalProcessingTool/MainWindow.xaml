@@ -25,7 +25,7 @@
             </Grid>
         </GroupBox>
 
-        <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="430,25,9.714,686">
+        <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="430,25,9.714,698">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -45,7 +45,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot2" Title="{Binding Title}" Margin="430,209,9.714,503">
+        <oxy:Plot Name="Plot2" Title="{Binding Title}" Margin="430,195,9.714,529">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -64,7 +64,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot3" Title="{Binding Title}" Margin="432,393,7.714,319">
+        <oxy:Plot Name="Plot3" Title="{Binding Title}" Margin="432,365,7.714,359">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -83,7 +83,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot4" Title="{Binding Title}" Margin="430,574,9.714,138">
+        <oxy:Plot Name="Plot4" Title="{Binding Title}" Margin="430,533,9.714,192">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -95,6 +95,25 @@
                         StrokeThickness="1" 
                         Color="Blue" />
                 <oxy:LineSeries Title="Series6" DataFieldX="xPoint"
+                        DataFieldY="yPointMax"
+                        LineStyle="Dash" StrokeThickness="1"
+                        Color="Red" />
+            </oxy:Plot.Series>
+
+        </oxy:Plot>
+
+        <oxy:Plot Name="Plot5" Title="{Binding Title}" Margin="430,703,9.714,21">
+            <oxy:Plot.Axes>
+                <oxy:LinearAxis Position="Left"/>
+                <oxy:LinearAxis Position="Bottom"/>
+            </oxy:Plot.Axes>
+
+            <oxy:Plot.Series>
+                <oxy:LineSeries Name="Series6" Title="Series1" DataFieldX="xPoint"
+                        DataFieldY="yPoint"
+                        StrokeThickness="1" 
+                        Color="Blue" />
+                <oxy:LineSeries Title="Series7" DataFieldX="xPoint"
                         DataFieldY="yPointMax"
                         LineStyle="Dash" StrokeThickness="1"
                         Color="Red" />

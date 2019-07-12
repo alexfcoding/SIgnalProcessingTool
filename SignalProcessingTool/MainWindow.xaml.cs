@@ -16,6 +16,7 @@ using System.Windows.Forms.DataVisualization.Charting;
 using System.Drawing;
 using System.Diagnostics;
 using DSPLib;
+using NAudio;
 
 namespace SignalProcessingTool
 {
@@ -83,19 +84,25 @@ namespace SignalProcessingTool
 
             Collection<PointClass> pointsSpectrum = new Collection<PointClass>();
             DrawSpectrum(pointsSpectrum, fftValues, Plot2, fftFreq);
-                        
+
             Complex[] equalizedSignal = Equalize(fftComplex);
 
             double[] fftValuesEq = new double[32768];
 
             for (int i = 0; i < fftValuesEq.Length; i++)
                 fftValuesEq[i] = (double)equalizedSignal[i].Magnitude;
-            
+
             Collection<PointClass> pointsSpectrumEq = new Collection<PointClass>();
             DrawSpectrum(pointsSpectrumEq, fftValuesEq, Plot3, fftFreq);
 
             Collection<PointClass> pointsImpulse = new Collection<PointClass>();
             DrawImpulse(pointsImpulse, InverseFFTMathNumerics(equalizedSignal), Plot4);
+
+
+            double[] readFile  = ReadWaveFile("W:\\test.wav");
+
+            Collection<PointClass> pointsWaveFile = new Collection<PointClass>();
+            DrawImpulse(pointsWaveFile, readFile, Plot5);
 
         }
 
@@ -234,6 +241,29 @@ namespace SignalProcessingTool
             }
 
             return inputSpectrum;
+        }
+
+        double[] ReadWaveFile(string filePath)
+        {
+            byte[] buffer = new byte[4];
+            double[] dataStorage = new double[32768];
+            long read = 0;
+            long position = 0;
+
+            NAudio.Wave.WaveFileReader waveReader = new NAudio.Wave.WaveFileReader(filePath);
+
+            while (waveReader.Position < dataStorage.Length * 2)
+            {
+                read = waveReader.Read(buffer, 0, 4);
+
+                for (int i = 0; i < read / 2; i += 1)
+                {
+                    dataStorage[position] = BitConverter.ToInt16(buffer, i * 2);
+                    position++;
+                }
+            }
+
+            return dataStorage;
         }
     }
 
