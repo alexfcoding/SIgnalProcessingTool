@@ -45,18 +45,18 @@ namespace SignalProcessingTool
 
         public void CalculateImpulse()
         {
-            AcousticModel Model1 = new AcousticModel();
+            FullAcousticModel Model1 = new FullAcousticModel();
 
             Model1.Pi = Math.PI;
-            Model1.Diameter = 0.038;
-            Model1.Thickness = 0.003;
+            Model1.Diameter = 0.062;
+            Model1.Thickness = 0.005;
             Model1.Density = 7800;
-            Model1.PipeLength = 10;
+            Model1.PipeLength = 6;
             
-            Model1.A1 = 10;
-            Model1.A2 = 10;
-            Model1.A3 = 5000000;
-            Model1.SignalDuration = 0.5f;
+            Model1.A1 = 0.2f;
+            Model1.A2 = 100;
+            Model1.A3 = 10000000;
+            Model1.SignalDuration = 1f;
             Model1.Tc = 0.00004;
             Model1.Ti = 0.000022;
             Model1.Fd = 44100;
@@ -67,17 +67,18 @@ namespace SignalProcessingTool
             Model1.Oi = new double[500];
             Model1.Sum = new double[44100];
 
-            Model1.XCoordinate = Model1.PipeLength / 1.6;
+            Model1.XCoordinate = Model1.PipeLength / 2;
             Model1.E = 200 * Math.Pow(10, 9);
             Model1.J = Model1.Pi * Math.Pow(Model1.Diameter, 3) * (double) Model1.Thickness / 8;
             Model1.Mass = Model1.Density * Model1.Pi * Model1.Diameter * Model1.Thickness;
             Model1.A4 = Model1.E * Model1.J / Model1.Mass;
 
             Model1.ComputeModel();
+            double[] amplifiedSamples = Amplify(Model1.Sum);
 
             double[] fftValues = FFTMathNumerics(Model1.Sum).Item1;
             double[] fftFreq = FFTMathNumerics(Model1.Sum).Item2;
-            Complex[] fftComplex = FFTMathNumerics(Model1.Sum).Item3;
+            Complex[] fftComplex = FFTMathNumerics(amplifiedSamples).Item3;
 
             Collection<PointClass> pointsFirstImpulse = new Collection<PointClass>();
             DrawImpulse(pointsFirstImpulse, Model1.Sum, Plot1);
@@ -95,14 +96,20 @@ namespace SignalProcessingTool
             Collection<PointClass> pointsSpectrumEq = new Collection<PointClass>();
             DrawSpectrum(pointsSpectrumEq, fftValuesEq, Plot3, fftFreq);
 
-            Collection<PointClass> pointsImpulse = new Collection<PointClass>();
-            DrawImpulse(pointsImpulse, InverseFFTMathNumerics(equalizedSignal), Plot4);
+            double[] equalizedSamples = InverseFFTMathNumerics(equalizedSignal);
+                        
+            //double[] readFile  = ReadWaveFile("W:\\3.wav");
 
+            //Collection<PointClass> pointsWaveFile = new Collection<PointClass>();
+            //DrawImpulse(pointsWaveFile, readFile, Plot5);
 
-            double[] readFile  = ReadWaveFile("W:\\test.wav");
+            
+            short[] outputSamples = equalizedSamples.Select(s => (short)s).ToArray();
 
-            Collection<PointClass> pointsWaveFile = new Collection<PointClass>();
-            DrawImpulse(pointsWaveFile, readFile, Plot5);
+            //Collection<PointClass> pointsImpulse = new Collection<PointClass>();
+            //DrawImpulse(pointsImpulse, outputSamples, Plot4);
+
+            WriteFile(outputSamples);
 
         }
 
@@ -228,7 +235,7 @@ namespace SignalProcessingTool
 
         Complex[] Equalize(Complex[] inputSpectrum)
         {
-            double frequency = 500;
+            double frequency = 1000;
 
             double frequencyNumber = frequency / (44100f / 32768f);
 
@@ -241,6 +248,23 @@ namespace SignalProcessingTool
             }
 
             return inputSpectrum;
+        }
+
+        double[] Amplify(double[] inputSamples)
+        {
+            double max = -0.0000000000001f;
+
+            for (int i = 0; i < inputSamples.Length; i++)
+            {
+                if (inputSamples[i] > max)
+                    max = inputSamples[i];
+            }
+
+            for (int i = 0; i < inputSamples.Length; i++)
+            {
+                inputSamples[i] = (inputSamples[i] / max / 2 * 32768);
+            }
+            return inputSamples;
         }
 
         double[] ReadWaveFile(string filePath)
@@ -265,13 +289,23 @@ namespace SignalProcessingTool
 
             return dataStorage;
         }
+
+        void WriteFile (short[] inputArray)
+        {
+            NAudio.Wave.WaveFormat waveFormat = new NAudio.Wave.WaveFormat(44100, 16, 1);
+            NAudio.Wave.WaveFileWriter writer = new NAudio.Wave.WaveFileWriter("G:\\track4.wav", waveFormat);
+            writer.WriteSamples(inputArray, 0, inputArray.Length);
+
+            writer.Flush();
+            writer.Dispose();
+        }
     }
 
-    public class AcousticModel
+    public class FullAcousticModel
     {
-        public AcousticModel() { }
+        public FullAcousticModel() { }
 
-        public AcousticModel(double diameter, double thickness, double density, double pipeLength, double xCoordinate, double a1, double a2, double a3, double signalDuration, double tc, double ti, double fd1, double modNumber, double[] cn1, double[] delta, double[] w1, double[] oi1, double[] sum, double e1, double j1, double mass1, double a4, double pi)
+        public FullAcousticModel(double diameter, double thickness, double density, double pipeLength, double xCoordinate, double a1, double a2, double a3, double signalDuration, double tc, double ti, double fd1, double modNumber, double[] cn1, double[] delta, double[] w1, double[] oi1, double[] sum, double e1, double j1, double mass1, double a4, double pi)
         {
             Diameter = diameter;
             Thickness = thickness;
@@ -298,14 +332,14 @@ namespace SignalProcessingTool
             Pi = pi;
         }
 
-        public void ComputeModel()
+        public virtual void ComputeModel()
         {
             int k = 0;
 
             for (int i = 1; i < ModNumber; i = i + 2)
             {
                 Cn[k] = Pi / 2 * (2 * i + 1);
-                Delta[k] = 0.5 * (A1 * Math.Pow(i, 1) * Math.Pow(Pi, 4) / Math.Pow(PipeLength, 4) + A2);
+                Delta[k] = Math.Sqrt(0.5 * (A1 * Math.Pow(i, 4) * Math.Pow(Pi, 4) / Math.Pow(PipeLength, 4) + A2));
                 W[k] = Math.Sqrt(A3 + A4 * Math.Pow(i, 4) * Math.Pow(Pi, 4) / Math.Pow(PipeLength, 4));
                 Oi[k] = Math.Sqrt(Math.Pow(W[k], 2) - Math.Pow(Delta[k], 2));
                 k++;
@@ -365,6 +399,14 @@ namespace SignalProcessingTool
         public double Mass { get; set; }
         public double A4 { get; set; }
         public double Pi { get; set; }
+    }
+
+    public class SimpleAcousticModel : FullAcousticModel
+    {
+        public override void ComputeModel()
+        {
+            base.ComputeModel();
+        }
     }
 
     public class PointClass
