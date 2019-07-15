@@ -33,6 +33,8 @@ namespace SignalProcessingTool
     /// </summary>
     public partial class MainWindow : Window
     {
+        int fileLength = 32768;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -43,16 +45,19 @@ namespace SignalProcessingTool
             CalculateImpulse();
         }
 
+        /// <summary>
+        /// Calculates the impulse.
+        /// </summary>
         public void CalculateImpulse()
         {
             FullAcousticModel Model1 = new FullAcousticModel();
-
+            
             Model1.Pi = Math.PI;
             Model1.Diameter = 0.062;
             Model1.Thickness = 0.005;
             Model1.Density = 7800;
             Model1.PipeLength = 6;
-            
+
             Model1.A1 = 0.2f;
             Model1.A2 = 100;
             Model1.A3 = 10000000;
@@ -69,19 +74,19 @@ namespace SignalProcessingTool
 
             Model1.XCoordinate = Model1.PipeLength / 2;
             Model1.E = 200 * Math.Pow(10, 9);
-            Model1.J = Model1.Pi * Math.Pow(Model1.Diameter, 3) * (double) Model1.Thickness / 8;
+            Model1.J = Model1.Pi * Math.Pow(Model1.Diameter, 3) * (double)Model1.Thickness / 8;
             Model1.Mass = Model1.Density * Model1.Pi * Model1.Diameter * Model1.Thickness;
             Model1.A4 = Model1.E * Model1.J / Model1.Mass;
 
             Model1.ComputeModel();
-            double[] amplifiedSamples = Amplify(Model1.Sum);
 
-            double[] fftValues = FFTMathNumerics(Model1.Sum).Item1;
-            double[] fftFreq = FFTMathNumerics(Model1.Sum).Item2;
+            double[] amplifiedSamples = Amplify(Model1.Sum);
+            double[] fftValues = FFTMathNumerics(amplifiedSamples).Item1;
+            double[] fftFreq = FFTMathNumerics(amplifiedSamples).Item2;
             Complex[] fftComplex = FFTMathNumerics(amplifiedSamples).Item3;
 
-            Collection<PointClass> pointsFirstImpulse = new Collection<PointClass>();
-            DrawImpulse(pointsFirstImpulse, Model1.Sum, Plot1);
+            //Collection<PointClass> pointsFirstImpulse = new Collection<PointClass>();
+            //DrawImpulse(pointsFirstImpulse, Model1.Sum, Plot1);
 
             Collection<PointClass> pointsSpectrum = new Collection<PointClass>();
             DrawSpectrum(pointsSpectrum, fftValues, Plot2, fftFreq);
@@ -97,23 +102,26 @@ namespace SignalProcessingTool
             DrawSpectrum(pointsSpectrumEq, fftValuesEq, Plot3, fftFreq);
 
             double[] equalizedSamples = InverseFFTMathNumerics(equalizedSignal);
-                        
-            //double[] readFile  = ReadWaveFile("W:\\3.wav");
 
-            //Collection<PointClass> pointsWaveFile = new Collection<PointClass>();
-            //DrawImpulse(pointsWaveFile, readFile, Plot5);
 
-            
+            ////double[] readFile = ReadWaveFile("W:\\4.wav");
+            ////double[] fftValues = FFTMathNumerics(readFile).Item1;
+            ////double[] fftFreq = FFTMathNumerics(readFile).Item2;
+            ////Complex[] fftComplex = FFTMathNumerics(readFile).Item3;
+            ////Complex[] equalizedSignal = Equalize(fftComplex);
+            ////double[] equalizedSamples = InverseFFTMathNumerics(equalizedSignal);
+            ////short[] outputSamples = equalizedSamples.Select(s => (short)s).ToArray();
+
             short[] outputSamples = equalizedSamples.Select(s => (short)s).ToArray();
 
-            //Collection<PointClass> pointsImpulse = new Collection<PointClass>();
-            //DrawImpulse(pointsImpulse, outputSamples, Plot4);
+            Collection<PointClass> pointsImpulse = new Collection<PointClass>();
+            DrawImpulse(pointsImpulse, outputSamples, Plot4);
 
             WriteFile(outputSamples);
 
         }
-
-        void DrawImpulse(Collection<PointClass> pointCollection, double[] valuesArray, OxyPlot.Wpf.Plot plotToDraw)
+        
+        void DrawImpulse(Collection<PointClass> pointCollection, short[] valuesArray, OxyPlot.Wpf.Plot plotToDraw)
         {
             plotToDraw.Series[0].ItemsSource = pointCollection;
 
@@ -191,9 +199,10 @@ namespace SignalProcessingTool
 
         Tuple<double[], double[], Complex[]> FFTMathNumerics (double[] inputArray)
         {
-            double[] tempArray = new double[32768];
+            double[] tempArray = new double[fileLength];
+            int fftBlockSize = fileLength;
 
-            for (int i = 0; i < 32768; i++)
+            for (int i = 0; i < fftBlockSize; i++)
             {
                 tempArray[i] = inputArray[i];
             }
@@ -214,7 +223,7 @@ namespace SignalProcessingTool
             for (int i = 0; i < outSamples.Length; i++)
                 outSamples[i] = (double)complexInput[i].Magnitude;
 
-            double[] freqSpan = MathNet.Numerics.IntegralTransforms.Fourier.FrequencyScale(32768, 44100);
+            double[] freqSpan = MathNet.Numerics.IntegralTransforms.Fourier.FrequencyScale(fileLength, 44100);
 
             var tuple = new Tuple<double[], double[], Complex[]>(outSamples, freqSpan, complexInput);
 
@@ -235,15 +244,16 @@ namespace SignalProcessingTool
 
         Complex[] Equalize(Complex[] inputSpectrum)
         {
-            double frequency = 1000;
+            double frequency = 2000;
+            
+            double frequencyNumber = frequency / (44100f / fileLength);
 
-            double frequencyNumber = frequency / (44100f / 32768f);
-
-            for (int i = 0; i < inputSpectrum.Length; i++)
+            for (int i = 0; i < fileLength / 2; i++)
             {
-                if (i > frequencyNumber)
+                if (i >= frequencyNumber)
                 {
                     inputSpectrum[i] = 0;
+                    inputSpectrum[inputSpectrum.Length - i - 1] = 0;
                 }
             }
 
@@ -270,7 +280,7 @@ namespace SignalProcessingTool
         double[] ReadWaveFile(string filePath)
         {
             byte[] buffer = new byte[4];
-            double[] dataStorage = new double[32768];
+            double[] dataStorage = new double[fileLength];
             long read = 0;
             long position = 0;
 
