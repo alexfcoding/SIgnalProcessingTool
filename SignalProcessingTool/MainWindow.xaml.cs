@@ -28,12 +28,9 @@ namespace SignalProcessingTool
     using System.Collections.ObjectModel;
     using System.Numerics;
 
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
-        int fileLength = 32768;
+        int signalLength;
 
         public MainWindow()
         {
@@ -42,13 +39,14 @@ namespace SignalProcessingTool
 
         private void BtnCalcStart_Click(object sender, RoutedEventArgs e)
         {
-            CalculateImpulse();
-        }
+            //signalLength = 32768;
+            //ProcessAcousticModel();
 
-        /// <summary>
-        /// Calculates the impulse.
-        /// </summary>
-        public void CalculateImpulse()
+            signalLength = 327680;
+            ProcessLoadedFile("W:\\4.wav");
+        }
+        
+        public void ProcessAcousticModel()
         {
             FullAcousticModel Model1 = new FullAcousticModel();
             
@@ -85,13 +83,10 @@ namespace SignalProcessingTool
             double[] fftFreq = FFTMathNumerics(amplifiedSamples).Item2;
             Complex[] fftComplex = FFTMathNumerics(amplifiedSamples).Item3;
 
-            //Collection<PointClass> pointsFirstImpulse = new Collection<PointClass>();
-            //DrawImpulse(pointsFirstImpulse, Model1.Sum, Plot1);
-
             Collection<PointClass> pointsSpectrum = new Collection<PointClass>();
             DrawSpectrum(pointsSpectrum, fftValues, Plot2, fftFreq);
 
-            Complex[] equalizedSignal = Equalize(fftComplex);
+            Complex[] equalizedSignal = ApplySpectrumFilter(fftComplex);
 
             double[] fftValuesEq = new double[32768];
 
@@ -102,21 +97,27 @@ namespace SignalProcessingTool
             DrawSpectrum(pointsSpectrumEq, fftValuesEq, Plot3, fftFreq);
 
             double[] equalizedSamples = InverseFFTMathNumerics(equalizedSignal);
-
-
-            ////double[] readFile = ReadWaveFile("W:\\4.wav");
-            ////double[] fftValues = FFTMathNumerics(readFile).Item1;
-            ////double[] fftFreq = FFTMathNumerics(readFile).Item2;
-            ////Complex[] fftComplex = FFTMathNumerics(readFile).Item3;
-            ////Complex[] equalizedSignal = Equalize(fftComplex);
-            ////double[] equalizedSamples = InverseFFTMathNumerics(equalizedSignal);
-            ////short[] outputSamples = equalizedSamples.Select(s => (short)s).ToArray();
-
             short[] outputSamples = equalizedSamples.Select(s => (short)s).ToArray();
 
-            Collection<PointClass> pointsImpulse = new Collection<PointClass>();
-            DrawImpulse(pointsImpulse, outputSamples, Plot4);
+            WriteFile(outputSamples);
+        }
 
+        void ProcessLoadedFile(string filePath)
+        {
+            double[] readFile = ReadWaveFile(filePath);
+
+            for (int i = 0; i < readFile.Length; i++)
+            {
+                readFile[i] = readFile[i] * 0.7f;
+            }
+
+            double[] fftValues = FFTMathNumerics(readFile).Item1;
+            double[] fftFreq = FFTMathNumerics(readFile).Item2;
+            Complex[] fftComplex = FFTMathNumerics(readFile).Item3;
+            Complex[] equalizedSignal = ApplySpectrumFilter(fftComplex);
+            double[] equalizedSamples = InverseFFTMathNumerics(equalizedSignal);
+
+            short[] outputSamples = equalizedSamples.Select(s => (short)s).ToArray();
             WriteFile(outputSamples);
 
         }
@@ -199,8 +200,8 @@ namespace SignalProcessingTool
 
         Tuple<double[], double[], Complex[]> FFTMathNumerics (double[] inputArray)
         {
-            double[] tempArray = new double[fileLength];
-            int fftBlockSize = fileLength;
+            double[] tempArray = new double[signalLength];
+            int fftBlockSize = signalLength;
 
             for (int i = 0; i < fftBlockSize; i++)
             {
@@ -223,7 +224,7 @@ namespace SignalProcessingTool
             for (int i = 0; i < outSamples.Length; i++)
                 outSamples[i] = (double)complexInput[i].Magnitude;
 
-            double[] freqSpan = MathNet.Numerics.IntegralTransforms.Fourier.FrequencyScale(fileLength, 44100);
+            double[] freqSpan = MathNet.Numerics.IntegralTransforms.Fourier.FrequencyScale(signalLength, 44100);
 
             var tuple = new Tuple<double[], double[], Complex[]>(outSamples, freqSpan, complexInput);
 
@@ -242,18 +243,27 @@ namespace SignalProcessingTool
             return outSamples;
         }
 
-        Complex[] Equalize(Complex[] inputSpectrum)
+        Complex[] ApplySpectrumFilter(Complex[] inputSpectrum)
         {
             double frequency = 2000;
-            
-            double frequencyNumber = frequency / (44100f / fileLength);
+            double[] equalizeFunction = new double[signalLength / 2];
 
-            for (int i = 0; i < fileLength / 2; i++)
+            for (int i = 0; i < equalizeFunction.Length; i++)
             {
-                if (i >= frequencyNumber)
+                equalizeFunction[i] = 1 - (double) 1 / equalizeFunction.Length * i;
+
+                if (equalizeFunction[i] < 0)
+                    equalizeFunction[i] = 0;
+            }
+
+            double frequencyNumber = frequency / (44100f / signalLength);
+            
+            for (int i = 0; i < signalLength / 2; i++)
+            {
+                //if (i >= frequencyNumber)
                 {
-                    inputSpectrum[i] = 0;
-                    inputSpectrum[inputSpectrum.Length - i - 1] = 0;
+                    inputSpectrum[i] = inputSpectrum[i] * equalizeFunction[i];
+                    inputSpectrum[inputSpectrum.Length - i - 1] = inputSpectrum[inputSpectrum.Length - i - 1] * equalizeFunction[i];
                 }
             }
 
@@ -280,7 +290,7 @@ namespace SignalProcessingTool
         double[] ReadWaveFile(string filePath)
         {
             byte[] buffer = new byte[4];
-            double[] dataStorage = new double[fileLength];
+            double[] dataStorage = new double[signalLength];
             long read = 0;
             long position = 0;
 
@@ -373,7 +383,6 @@ namespace SignalProcessingTool
 
                     Sum[i] = Sum[i] + rotator * Math.Exp(-Delta[k] * Ti) * Math.Sin(j * Pi * XCoordinate / PipeLength) /
                     (Math.Pow((Math.Pow(W[k], 2) - Math.Pow(Pi, 2) / Math.Pow(Tc, 2)), 2) + 4 * Math.Pow(Pi, 2) * Math.Pow(Delta[k], 2) / Math.Pow(Tc, 2)) *
-
                     ((m1 * Math.Cos(m3) - m2 * Math.Sin(m3) + 2 * Pi * Delta[k] / Tc) * Math.Cos(Oi[k] * Ti) + (m2 * Math.Cos(m3) + m1 * Math.Sin(m3) +
                     Pi / Tc / Oi[k] * (2 * Math.Pow(Delta[k], 2) - Math.Pow(W[k], 2) + Math.Pow(Pi, 2) / Math.Pow(Tc, 2))) * Math.Sin(Oi[k] * Ti));
 
