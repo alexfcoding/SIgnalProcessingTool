@@ -44,6 +44,31 @@ namespace SignalProcessingTool
 
             signalLength = 327680;
             ProcessLoadedFile("W:\\4.wav");
+
+            //============================================================
+
+            double[] readFile = ReadWaveFile("W:\\1.wav");
+
+            for (int i = 0; i < readFile.Length; i++)
+            {
+                readFile[i] = readFile[i] * 0.7f;
+            }
+
+            Complex[] fftComplex = FFTMathNumerics(readFile).Item3;
+
+            //============================================================
+
+            readFile = ReadWaveFile("W:\\2.wav");
+
+            for (int i = 0; i < readFile.Length; i++)
+            {
+                readFile[i] = readFile[i] * 0.7f;
+            }
+
+            Complex[] fftComplex2 = FFTMathNumerics(readFile).Item3;
+
+            Complex[] fftDiff = CalculateSpectrumDiff(fftComplex, fftComplex2);
+
         }
         
         public void ProcessAcousticModel()
@@ -268,6 +293,18 @@ namespace SignalProcessingTool
             }
 
             return inputSpectrum;
+        }
+
+        Complex[] CalculateSpectrumDiff(Complex[] inputSpectrum, Complex[] spectrumToSubstract)
+        {
+            Complex[] complexOutput = new Complex[inputSpectrum.Length];
+
+            for (int i = 0; i < complexOutput.Length; i++)
+            {
+                complexOutput[i] = inputSpectrum[i] - spectrumToSubstract[i];
+            }
+
+            return complexOutput;
         }
 
         double[] Amplify(double[] inputSamples)
