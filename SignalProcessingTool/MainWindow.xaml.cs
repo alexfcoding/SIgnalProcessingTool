@@ -42,33 +42,56 @@ namespace SignalProcessingTool
             //signalLength = 32768;
             //ProcessAcousticModel();
 
-            signalLength = 327680;
-            ProcessLoadedFile("W:\\4.wav");
+            signalLength = 44100;
+            //ProcessLoadedFile("W:\\4.wav");
 
             //============================================================
 
-            double[] readFile = ReadWaveFile("W:\\1.wav");
+            double[] readFile = ReadWaveFile("W:\\66.wav");
 
             for (int i = 0; i < readFile.Length; i++)
             {
                 readFile[i] = readFile[i] * 0.7f;
             }
 
+            double[] fftValues = FFTMathNumerics(readFile).Item1;
+            double[] fftFreq = FFTMathNumerics(readFile).Item2;
             Complex[] fftComplex = FFTMathNumerics(readFile).Item3;
 
+            Collection<PointClass> pointsSpectrum1 = new Collection<PointClass>();
+            DrawSpectrum(pointsSpectrum1, fftValues, Plot1, fftFreq);
+
             //============================================================
 
-            readFile = ReadWaveFile("W:\\2.wav");
+            readFile = ReadWaveFile("W:\\77.wav");
 
             for (int i = 0; i < readFile.Length; i++)
             {
                 readFile[i] = readFile[i] * 0.7f;
             }
 
+            double[] fftValues2 = FFTMathNumerics(readFile).Item1;
             Complex[] fftComplex2 = FFTMathNumerics(readFile).Item3;
+            Complex[] complexDiff = CalculateSpectrumDiff(fftComplex, fftComplex2);
 
-            Complex[] fftDiff = CalculateSpectrumDiff(fftComplex, fftComplex2);
+            Collection<PointClass> pointsSpectrum2 = new Collection<PointClass>();
+            DrawSpectrum(pointsSpectrum2, fftValues2, Plot2, fftFreq);
 
+            //============================================================
+
+            double[] diffAmplitudes = new double[complexDiff.Length];
+
+            for (int i = 0; i < diffAmplitudes.Length; i++)
+                diffAmplitudes[i] = (double)complexDiff[i].Magnitude;
+
+            Collection<PointClass> pointsSpectrumDiff = new Collection<PointClass>();
+            DrawSpectrum(pointsSpectrumDiff, diffAmplitudes, Plot3, fftFreq);
+
+            //============================================================
+
+            double[] diffSamples = InverseFFTMathNumerics(complexDiff);
+            short[] outputSamples = diffSamples.Select(s => (short)s).ToArray();
+            WriteFile(outputSamples);
         }
         
         public void ProcessAcousticModel()
@@ -350,7 +373,7 @@ namespace SignalProcessingTool
         void WriteFile (short[] inputArray)
         {
             NAudio.Wave.WaveFormat waveFormat = new NAudio.Wave.WaveFormat(44100, 16, 1);
-            NAudio.Wave.WaveFileWriter writer = new NAudio.Wave.WaveFileWriter("G:\\track4.wav", waveFormat);
+            NAudio.Wave.WaveFileWriter writer = new NAudio.Wave.WaveFileWriter("G:\\diffTrack.wav", waveFormat);
             writer.WriteSamples(inputArray, 0, inputArray.Length);
 
             writer.Flush();

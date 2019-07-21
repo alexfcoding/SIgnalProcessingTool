@@ -7,7 +7,7 @@
         xmlns:local="clr-namespace:SignalProcessingTool"
         
         mc:Ignorable="d"
-        Title="SignalProcessingTool" Height="900" Width="1600">
+        Title="SignalProcessingTool" Height="910.286" Width="1600">
 
 
 
@@ -16,16 +16,9 @@
             <ColumnDefinition/>
             <ColumnDefinition Width="0*"/>
         </Grid.ColumnDefinitions>
-        <Button x:Name="btnCalcStart" Content="Calculate" HorizontalAlignment="Left" Margin="10,822,0,0" VerticalAlignment="Top" Width="394" Click="BtnCalcStart_Click" Height="28"/>
-        <GroupBox x:Name="groupParams" Header="Pipe parameters" HorizontalAlignment="Left" Height="806" Margin="10,10,0,0" VerticalAlignment="Top" Width="394">
-            <Grid HorizontalAlignment="Left" Height="786" Margin="0,10,-1.143,-13.143" VerticalAlignment="Top" Width="384">
-                <TextBox HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-                <TextBox HorizontalAlignment="Left" Height="23" Margin="10,38,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-                <TextBox HorizontalAlignment="Left" Height="23" Margin="10,66,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-            </Grid>
-        </GroupBox>
+        <Button x:Name="btnCalcStart" Content="Calculate" HorizontalAlignment="Left" Margin="13,805,0,0" VerticalAlignment="Top" Width="394" Click="BtnCalcStart_Click" Height="28"/>
 
-        <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="430,25,9.714,698">
+        <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="10,10,10.714,726.285">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -45,7 +38,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot2" Title="{Binding Title}" Margin="430,195,9.714,529">
+        <oxy:Plot Name="Plot2" Title="{Binding Title}" Margin="10,166,10.714,571.285">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -64,7 +57,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot3" Title="{Binding Title}" Margin="432,365,7.714,359">
+        <oxy:Plot Name="Plot3" Title="{Binding Title}" Margin="13,322,7.714,415.285">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -83,7 +76,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot4" Title="{Binding Title}" Margin="430,533,9.714,192">
+        <oxy:Plot Name="Plot4" Title="{Binding Title}" Margin="10,476,10.714,261.285">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -102,7 +95,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot5" Title="{Binding Title}" Margin="430,703,9.714,21">
+        <oxy:Plot Name="Plot5" Title="{Binding Title}" Margin="10,632,10.714,104.285">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
