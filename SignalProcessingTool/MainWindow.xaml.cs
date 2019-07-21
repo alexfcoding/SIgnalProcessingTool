@@ -39,19 +39,21 @@ namespace SignalProcessingTool
 
         private void BtnCalcStart_Click(object sender, RoutedEventArgs e)
         {
-            //signalLength = 32768;
-            //ProcessAcousticModel();
-
+            
             signalLength = 44100;
-            //ProcessLoadedFile("W:\\4.wav");
-
-            //============================================================
-
+            //ProcessAcousticModel();
+            SubstractWaveforms();
+        }
+        /// <summary>
+        /// Read files, substract spectrum and inverse FFT.
+        /// </summary>
+        public void SubstractWaveforms()
+        {
             double[] readFile = ReadWaveFile("W:\\66.wav");
 
             for (int i = 0; i < readFile.Length; i++)
             {
-                readFile[i] = readFile[i] * 0.7f;
+                readFile[i] = readFile[i] * 1f;
             }
 
             double[] fftValues = FFTMathNumerics(readFile).Item1;
@@ -67,7 +69,7 @@ namespace SignalProcessingTool
 
             for (int i = 0; i < readFile.Length; i++)
             {
-                readFile[i] = readFile[i] * 0.7f;
+                readFile[i] = readFile[i] * 1f;
             }
 
             double[] fftValues2 = FFTMathNumerics(readFile).Item1;
@@ -92,8 +94,11 @@ namespace SignalProcessingTool
             double[] diffSamples = InverseFFTMathNumerics(complexDiff);
             short[] outputSamples = diffSamples.Select(s => (short)s).ToArray();
             WriteFile(outputSamples);
+
         }
-        
+        /// <summary>
+        /// Fill model with data and process.
+        /// </summary>
         public void ProcessAcousticModel()
         {
             FullAcousticModel Model1 = new FullAcousticModel();
@@ -150,6 +155,10 @@ namespace SignalProcessingTool
             WriteFile(outputSamples);
         }
 
+        /// <summary>
+        /// Simple wave loading and FFT.
+        /// </summary>
+        /// <param name="filePath"></param>
         void ProcessLoadedFile(string filePath)
         {
             double[] readFile = ReadWaveFile(filePath);
@@ -169,7 +178,13 @@ namespace SignalProcessingTool
             WriteFile(outputSamples);
 
         }
-        
+
+        /// <summary>
+        /// Drawing function for waveforms.
+        /// </summary>
+        /// <param name="pointCollection">The collection of points.</param>
+        /// <param name="valuesArray">The input array.</param>
+        /// <param name="plotToDraw">The plot name.</param>
         void DrawImpulse(Collection<PointClass> pointCollection, short[] valuesArray, OxyPlot.Wpf.Plot plotToDraw)
         {
             plotToDraw.Series[0].ItemsSource = pointCollection;
@@ -187,6 +202,12 @@ namespace SignalProcessingTool
             plotToDraw.InvalidatePlot(true);
         }
 
+        /// <summary>
+        /// Drawing function for waveforms spectrum.
+        /// </summary>
+        /// <param name="pointCollection">The collection of points.</param>
+        /// <param name="valuesArray">The input array.</param>
+        /// <param name="plotToDraw">The plot name.</param>
         void DrawSpectrum(Collection<PointClass> pointCollection, double[] valuesArray, OxyPlot.Wpf.Plot plotToDraw, double[] fftFreq = null)
         {
             plotToDraw.Series[0].ItemsSource = pointCollection;
@@ -204,6 +225,12 @@ namespace SignalProcessingTool
             plotToDraw.InvalidatePlot(true);
         }
 
+        /// <summary>
+        /// FFT using DSPLib library.
+        /// </summary>
+        /// <param name="inputArray">The input array.</param>
+        /// <param name="logScale">if set to <c>true</c> [log scale]</param>
+        /// <returns></returns>
         Tuple<double[],double[]> FastFourierDSPLib(double[] inputArray, bool logScale)
         {
             double[] tempArray = new double[2048];
@@ -246,6 +273,11 @@ namespace SignalProcessingTool
             return tuple;
         }
 
+        /// <summary>
+        /// FFT using Math.Numerics library.
+        /// </summary>
+        /// <param name="inputArray">The input array.</param>
+        /// <returns></returns>
         Tuple<double[], double[], Complex[]> FFTMathNumerics (double[] inputArray)
         {
             double[] tempArray = new double[signalLength];
@@ -278,7 +310,12 @@ namespace SignalProcessingTool
 
             return tuple;
         }
-
+        
+        /// <summary>
+        /// Inverse FFT from Math.Numerics library.
+        /// </summary>
+        /// <param name="inputArray">The input spectrum complex array.</param>
+        /// <returns></returns>
         double[] InverseFFTMathNumerics (Complex[] inputSpectrum)
         {
             MathNet.Numerics.IntegralTransforms.Fourier.Inverse(inputSpectrum);
@@ -291,6 +328,11 @@ namespace SignalProcessingTool
             return outSamples;
         }
 
+        /// <summary>
+        /// Applies the spectrum filter to signal.
+        /// </summary>
+        /// <param name="inputSpectrum">The input spectrum.</param>
+        /// <returns></returns>
         Complex[] ApplySpectrumFilter(Complex[] inputSpectrum)
         {
             double frequency = 2000;
@@ -318,6 +360,12 @@ namespace SignalProcessingTool
             return inputSpectrum;
         }
 
+        /// <summary>
+        /// Calculates the spectrum substraction.
+        /// </summary>
+        /// <param name="inputSpectrum">The input spectrum.</param>
+        /// <param name="spectrumToSubstract">A spectrum to substract.</param>
+        /// <returns></returns>
         Complex[] CalculateSpectrumDiff(Complex[] inputSpectrum, Complex[] spectrumToSubstract)
         {
             Complex[] complexOutput = new Complex[inputSpectrum.Length];
@@ -330,6 +378,11 @@ namespace SignalProcessingTool
             return complexOutput;
         }
 
+        /// <summary>
+        /// Scales the specified input samples.
+        /// </summary>
+        /// <param name="inputSamples">The input samples.</param>
+        /// <returns></returns>
         double[] Amplify(double[] inputSamples)
         {
             double max = -0.0000000000001f;
@@ -347,6 +400,11 @@ namespace SignalProcessingTool
             return inputSamples;
         }
 
+        /// <summary>
+        /// Reads the wave file.
+        /// </summary>
+        /// <param name="filePath">The file path.</param>
+        /// <returns></returns>
         double[] ReadWaveFile(string filePath)
         {
             byte[] buffer = new byte[4];
@@ -370,17 +428,24 @@ namespace SignalProcessingTool
             return dataStorage;
         }
 
+
+        /// <summary>
+        /// Writes the wave file.
+        /// </summary>
+        /// <param name="inputArray">The input array.</param>
         void WriteFile (short[] inputArray)
         {
             NAudio.Wave.WaveFormat waveFormat = new NAudio.Wave.WaveFormat(44100, 16, 1);
             NAudio.Wave.WaveFileWriter writer = new NAudio.Wave.WaveFileWriter("G:\\diffTrack.wav", waveFormat);
             writer.WriteSamples(inputArray, 0, inputArray.Length);
-
             writer.Flush();
             writer.Dispose();
         }
     }
 
+    /// <summary>
+    /// A full model of acoustic signal
+    /// </summary>
     public class FullAcousticModel
     {
         public FullAcousticModel() { }
@@ -480,6 +545,10 @@ namespace SignalProcessingTool
         public double Pi { get; set; }
     }
 
+    /// <summary>
+    /// A simple model of acoustic signal
+    /// </summary>
+    /// <seealso cref="SignalProcessingTool.FullAcousticModel" />
     public class SimpleAcousticModel : FullAcousticModel
     {
         public override void ComputeModel()
