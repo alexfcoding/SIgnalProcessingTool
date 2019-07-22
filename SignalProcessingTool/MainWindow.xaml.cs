@@ -39,9 +39,7 @@ namespace SignalProcessingTool
 
         private void BtnCalcStart_Click(object sender, RoutedEventArgs e)
         {
-            
             signalLength = 44100;
-            //ProcessAcousticModel();
             SubstractWaveforms();
         }
         /// <summary>
@@ -49,11 +47,13 @@ namespace SignalProcessingTool
         /// </summary>
         public void SubstractWaveforms()
         {
-            double[] readFile = ReadWaveFile("W:\\66.wav");
+            // Read file with impact signal ===========================================================
+
+            double[] readFile = ReadWaveFile("G:\\ModelOutputCutFreq.wav");
 
             for (int i = 0; i < readFile.Length; i++)
             {
-                readFile[i] = readFile[i] * 1f;
+                readFile[i] = readFile[i] * 0.1f;
             }
 
             double[] fftValues = FFTMathNumerics(readFile).Item1;
@@ -63,43 +63,58 @@ namespace SignalProcessingTool
             Collection<PointClass> pointsSpectrum1 = new Collection<PointClass>();
             DrawSpectrum(pointsSpectrum1, fftValues, Plot1, fftFreq);
 
-            //============================================================
+            // Read file without impact signal (normal state) =========================================
 
-            readFile = ReadWaveFile("W:\\77.wav");
+            readFile = ReadWaveFile("G:\\ModelOutputStock.wav");
 
             for (int i = 0; i < readFile.Length; i++)
-            {
-                readFile[i] = readFile[i] * 1f;
+            { 
+                readFile[i] = readFile[i] * 0.1f;
             }
 
             double[] fftValues2 = FFTMathNumerics(readFile).Item1;
             Complex[] fftComplex2 = FFTMathNumerics(readFile).Item3;
-            Complex[] complexDiff = CalculateSpectrumDiff(fftComplex, fftComplex2);
+
+            Complex[] complexDiff = CalculateSpectrumDiff(fftComplex, fftComplex2); // Разница спектров
 
             Collection<PointClass> pointsSpectrum2 = new Collection<PointClass>();
             DrawSpectrum(pointsSpectrum2, fftValues2, Plot2, fftFreq);
 
-            //============================================================
+            // Read source model file =================================================================
 
-            double[] diffAmplitudes = new double[complexDiff.Length];
+            readFile = ReadWaveFile("W:\\HoleExperimental.wav");
 
-            for (int i = 0; i < diffAmplitudes.Length; i++)
-                diffAmplitudes[i] = (double)complexDiff[i].Magnitude;
+            for (int i = 0; i < readFile.Length; i++)
+            {
+                readFile[i] = readFile[i] * 0.02f;
+            }
 
-            Collection<PointClass> pointsSpectrumDiff = new Collection<PointClass>();
-            DrawSpectrum(pointsSpectrumDiff, diffAmplitudes, Plot3, fftFreq);
+            Complex[] fftComplex3 = FFTMathNumerics(readFile).Item3;
 
-            //============================================================
+            // Multiply model with impact coefficients array ==========================================
 
-            double[] diffSamples = InverseFFTMathNumerics(complexDiff);
-            short[] outputSamples = diffSamples.Select(s => (short)s).ToArray();
-            WriteFile(outputSamples);
+            for (int i = 0; i < signalLength; i++)
+            {
+                fftComplex3[i] = fftComplex3[i] * complexDiff[i];
+            }
 
+            double[] finalDiffAmplitudes = new double[fftComplex3.Length];
+
+            for (int i = 0; i < finalDiffAmplitudes.Length; i++)
+                finalDiffAmplitudes[i] = (double)fftComplex3[i].Magnitude;
+
+            Collection<PointClass> pointsSpectrum3 = new Collection<PointClass>();
+            DrawSpectrum(pointsSpectrum3, finalDiffAmplitudes, Plot4, fftFreq);
+
+            double[] diffFinalSamples = InverseFFTMathNumerics(fftComplex3);
+            short[] outputFinalSamples = diffFinalSamples.Select(s => (short)s).ToArray();
+
+            WriteFile(outputFinalSamples, "G:\\ModelWithDefectHole.wav");
         }
         /// <summary>
         /// Fill model with data and process.
         /// </summary>
-        public void ProcessAcousticModel()
+        public void GenerateAcousticImpulse()
         {
             FullAcousticModel Model1 = new FullAcousticModel();
             
@@ -152,7 +167,7 @@ namespace SignalProcessingTool
             double[] equalizedSamples = InverseFFTMathNumerics(equalizedSignal);
             short[] outputSamples = equalizedSamples.Select(s => (short)s).ToArray();
 
-            WriteFile(outputSamples);
+            WriteFile(outputSamples, "G:\\ModelOutputStock.wav");
         }
 
         /// <summary>
@@ -175,7 +190,7 @@ namespace SignalProcessingTool
             double[] equalizedSamples = InverseFFTMathNumerics(equalizedSignal);
 
             short[] outputSamples = equalizedSamples.Select(s => (short)s).ToArray();
-            WriteFile(outputSamples);
+            WriteFile(outputSamples, "G:\\InverseFFTSignal.wav");
 
         }
 
@@ -295,8 +310,7 @@ namespace SignalProcessingTool
                 Complex tmp = new Complex(tempArray[i], 0);
                 complexInput[i] = tmp;
             }
-
-           
+                       
             MathNet.Numerics.IntegralTransforms.Fourier.Forward(complexInput);
             
             double[] outSamples = new double[complexInput.Length];
@@ -312,7 +326,7 @@ namespace SignalProcessingTool
         }
         
         /// <summary>
-        /// Inverse FFT from Math.Numerics library.
+        /// Inverse FFT using Math.Numerics library.
         /// </summary>
         /// <param name="inputArray">The input spectrum complex array.</param>
         /// <returns></returns>
@@ -370,9 +384,11 @@ namespace SignalProcessingTool
         {
             Complex[] complexOutput = new Complex[inputSpectrum.Length];
 
+           // Complex[] ampCoeff = new double[signalLength / 2];
+
             for (int i = 0; i < complexOutput.Length; i++)
             {
-                complexOutput[i] = inputSpectrum[i] - spectrumToSubstract[i];
+                complexOutput[i] = inputSpectrum[i] / spectrumToSubstract[i];
             }
 
             return complexOutput;
@@ -433,13 +449,19 @@ namespace SignalProcessingTool
         /// Writes the wave file.
         /// </summary>
         /// <param name="inputArray">The input array.</param>
-        void WriteFile (short[] inputArray)
+        void WriteFile (short[] inputArray, string filePath)
         {
             NAudio.Wave.WaveFormat waveFormat = new NAudio.Wave.WaveFormat(44100, 16, 1);
-            NAudio.Wave.WaveFileWriter writer = new NAudio.Wave.WaveFileWriter("G:\\diffTrack.wav", waveFormat);
+            NAudio.Wave.WaveFileWriter writer = new NAudio.Wave.WaveFileWriter(filePath, waveFormat);
             writer.WriteSamples(inputArray, 0, inputArray.Length);
             writer.Flush();
             writer.Dispose();
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            signalLength = 44100;
+            GenerateAcousticImpulse();
         }
     }
 

@@ -16,7 +16,7 @@
             <ColumnDefinition/>
             <ColumnDefinition Width="0*"/>
         </Grid.ColumnDefinitions>
-        <Button x:Name="btnCalcStart" Content="Calculate" HorizontalAlignment="Left" Margin="13,805,0,0" VerticalAlignment="Top" Width="394" Click="BtnCalcStart_Click" Height="28"/>
+        <Button x:Name="btnCalcStart" Content="Apply spectrum function" HorizontalAlignment="Left" Margin="40,801,0,0" VerticalAlignment="Top" Width="162" Click="BtnCalcStart_Click" Height="28"/>
 
         <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="10,10,10.714,726.285">
             <oxy:Plot.Axes>
@@ -113,5 +113,6 @@
             </oxy:Plot.Series>
 
         </oxy:Plot>
+        <Button Content="Generate acoustic model" HorizontalAlignment="Left" Margin="218,801,0,0" VerticalAlignment="Top" Width="155" Height="28" Click="Button_Click"/>
     </Grid>
 </Window>
