@@ -81,7 +81,7 @@ namespace SignalProcessingTool
             DrawSpectrum(pointsSpectrum2, fftValues2, Plot2, fftFreq);
 
             // Read model signal
-            readFile = ReadWaveFile("G:\\NormExperimentalAnother.wav");
+            readFile = ReadWaveFile("G:\\ModelNorm.wav");
 
             for (int i = 0; i < readFile.Length; i++)
             {
@@ -94,6 +94,13 @@ namespace SignalProcessingTool
             // Spectrum difference
             Complex[] complexDiff = SpectrumDiff(fftComplex, fftComplex2);
 
+            // Inverse FFT and converting to short
+            double[] diffSamples = InverseFFTMathNumerics(complexDiff);
+            short[] outputSamples = diffSamples.Select(s => (short)s).ToArray();
+
+            // Processing result
+            WriteFile(outputSamples, "G:\\diff.wav");
+
             // Apply spectrum to signal
             // "+" for SpectrumDiff() and "*" for SpectrumDivide() function
             for (int i = 0; i < signalLength; i++) 
@@ -105,12 +112,12 @@ namespace SignalProcessingTool
             double[] diffSpectrum = new double[signalLength / 2];
 
             for (int i = 0; i < diffSpectrum.Length; i++)
-                diffSpectrum[i] = (double)complexDiff[i].Magnitude; 
+                diffSpectrum[i] = Math.Log10((double)complexDiff[i].Magnitude) * 10; 
 
             double[] finalDiffAmplitudes = new double[fftComplex3.Length];
 
             for (int i = 0; i < finalDiffAmplitudes.Length; i++)
-                finalDiffAmplitudes[i] = (double)fftComplex3[i].Magnitude;
+                finalDiffAmplitudes[i] = Math.Log10((double)fftComplex3[i].Magnitude) * 10;
             
             // Draw spectrum difference
             Collection<PointClass> pointsSpectrumDiff= new Collection<PointClass>();
@@ -332,7 +339,9 @@ namespace SignalProcessingTool
             double[] outSamples = new double[complexInput.Length];
 
             for (int i = 0; i < outSamples.Length; i++)
-                outSamples[i] = (double)complexInput[i].Magnitude;
+            {
+                outSamples[i] = Math.Log10((double)complexInput[i].Magnitude) * 10;
+            }  
 
             double[] freqSpan = MathNet.Numerics.IntegralTransforms.Fourier.FrequencyScale(signalLength, 44100);
 
@@ -348,12 +357,20 @@ namespace SignalProcessingTool
         /// <returns></returns>
         double[] InverseFFTMathNumerics (Complex[] inputSpectrum)
         {
-            MathNet.Numerics.IntegralTransforms.Fourier.Inverse(inputSpectrum);
+            Complex[] ifftSpectrum = new Complex[inputSpectrum.Length];
 
-            double[] outSamples = new double[inputSpectrum.Length];
+            for (int i = 0; i < ifftSpectrum.Length; i++)
+            {
+                Complex tmp = new Complex(inputSpectrum[i].Real, inputSpectrum[i].Imaginary);
+                ifftSpectrum[i] = tmp;
+            }
+
+            MathNet.Numerics.IntegralTransforms.Fourier.Inverse(ifftSpectrum);
+
+            double[] outSamples = new double[ifftSpectrum.Length];
 
             for (int i = 0; i < outSamples.Length; i++)
-                outSamples[i] = (double)inputSpectrum[i].Real;
+                outSamples[i] = (double)ifftSpectrum[i].Real;
 
             return outSamples;
         }

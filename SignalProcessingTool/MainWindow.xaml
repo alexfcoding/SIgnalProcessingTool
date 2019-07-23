@@ -16,9 +16,9 @@
             <ColumnDefinition/>
             <ColumnDefinition Width="0*"/>
         </Grid.ColumnDefinitions>
-        <Button x:Name="btnCalcStart" Content="Apply spectrum function" HorizontalAlignment="Left" Margin="40,801,0,0" VerticalAlignment="Top" Width="162" Click="BtnCalcStart_Click" Height="28"/>
+        <Button x:Name="btnCalcStart" Content="Apply spectrum function" HorizontalAlignment="Left" Margin="13,844,0,0" VerticalAlignment="Top" Width="162" Click="BtnCalcStart_Click" Height="28"/>
 
-        <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="10,10,10.714,726.285">
+        <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="10,10,10.714,675.285">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -38,7 +38,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot2" Title="{Binding Title}" Margin="10,166,10.714,571.285">
+        <oxy:Plot Name="Plot2" Title="{Binding Title}" Margin="10,221,10.714,465.285">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -57,7 +57,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot3" Title="{Binding Title}" Margin="13,322,7.714,415.285">
+        <oxy:Plot Name="Plot3" Title="{Binding Title}" Margin="13,432,7.714,254.285">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -76,7 +76,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot4" Title="{Binding Title}" Margin="10,476,10.714,261.285">
+        <oxy:Plot Name="Plot4" Title="{Binding Title}" Margin="13,634,7.714,52.285">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -95,7 +95,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot5" Title="{Binding Title}" Margin="10,632,10.714,104.285">
+        <oxy:Plot Name="Plot5" Title="{Binding Title}" Margin="10,632,10.714,104.285" Visibility="Hidden">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -113,6 +113,6 @@
             </oxy:Plot.Series>
 
         </oxy:Plot>
-        <Button Content="Generate acoustic model" HorizontalAlignment="Left" Margin="218,801,0,0" VerticalAlignment="Top" Width="155" Height="28" Click="Button_Click"/>
+        <Button Content="Generate acoustic model" HorizontalAlignment="Left" Margin="180,844,0,0" VerticalAlignment="Top" Width="155" Height="28" Click="Button_Click"/>
     </Grid>
 </Window>
