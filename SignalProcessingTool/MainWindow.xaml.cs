@@ -49,11 +49,11 @@ namespace SignalProcessingTool
         {
             // Read file with impact signal ===========================================================
 
-            double[] readFile = ReadWaveFile("G:\\ModelOutputCutFreq.wav");
+            double[] readFile = ReadWaveFile("G:\\NormExperimental.wav");
 
             for (int i = 0; i < readFile.Length; i++)
             {
-                readFile[i] = readFile[i] * 0.1f;
+                readFile[i] = readFile[i] * 1f;
             }
 
             double[] fftValues = FFTMathNumerics(readFile).Item1;
@@ -65,37 +65,85 @@ namespace SignalProcessingTool
 
             // Read file without impact signal (normal state) =========================================
 
-            readFile = ReadWaveFile("G:\\ModelOutputStock.wav");
+            readFile = ReadWaveFile("G:\\NormExperimental2.wav");
 
             for (int i = 0; i < readFile.Length; i++)
             { 
-                readFile[i] = readFile[i] * 0.1f;
+                readFile[i] = readFile[i] * 1f;
             }
 
             double[] fftValues2 = FFTMathNumerics(readFile).Item1;
             Complex[] fftComplex2 = FFTMathNumerics(readFile).Item3;
 
             Complex[] complexDiff = CalculateSpectrumDiff(fftComplex, fftComplex2); // Разница спектров
+            double[] doubleDiff = CalculateDoubleSpectrumDiff(fftComplex, fftComplex2); // Разница спектров double
+
+            Collection<PointClass> pointsAmps = new Collection<PointClass>();
+            DrawImpulse(pointsAmps, doubleDiff, Plot5);
 
             Collection<PointClass> pointsSpectrum2 = new Collection<PointClass>();
             DrawSpectrum(pointsSpectrum2, fftValues2, Plot2, fftFreq);
 
+            double[] diffAmplitudes = new double[signalLength];
+                        
+            for (int i = 0; i < diffAmplitudes.Length; i++)
+                diffAmplitudes[i] = (double)complexDiff[i].Magnitude;
+
+            Collection<PointClass> pointsSpectrum3 = new Collection<PointClass>();
+            DrawSpectrum(pointsSpectrum3, diffAmplitudes, Plot3, fftFreq);
+
+            double[] diffSamples = InverseFFTMathNumerics(complexDiff);
+            short[] outputSamples = diffSamples.Select(s => (short)s).ToArray();
+
+            WriteFile(outputSamples, "G:\\diff.wav");
+
             // Read source model file =================================================================
 
-            readFile = ReadWaveFile("W:\\HoleExperimental.wav");
+            readFile = ReadWaveFile("G:\\NormExperimental2.wav");
 
             for (int i = 0; i < readFile.Length; i++)
             {
-                readFile[i] = readFile[i] * 0.02f;
+                readFile[i] = readFile[i] * 1f;
             }
 
             Complex[] fftComplex3 = FFTMathNumerics(readFile).Item3;
 
             // Multiply model with impact coefficients array ==========================================
 
+            double[] equalizeFunction = new double[signalLength];
+
+            for (int i = 0; i < equalizeFunction.Length; i++)
+            {
+                equalizeFunction[i] = 1 - (double) 1 / equalizeFunction.Length * i;
+
+                if (equalizeFunction[i] < 0)
+                    equalizeFunction[i] = 0;
+            }
+
+            Random rnd = new Random();
+
+            Complex[] complexInput = new Complex[signalLength];
+
+            for (int i = 0; i < complexInput.Length / 2; i++)
+            {
+                int random = rnd.Next(3, 4);
+
+                //Complex tmp = new Complex(fftComplex3[i].Real * equalizeFunction[i], fftComplex3[i].Imaginary * equalizeFunction[i]);
+                Complex tmp = new Complex(fftComplex3[i].Real * complexDiff[i].Real, 0);
+
+                complexInput[i] = tmp;
+                //complexInput[i] *= random;
+            }
+
+            
             for (int i = 0; i < signalLength; i++)
             {
+                
+                //fftComplex3[i] = fftComplex3[i] + complexDiff[i];
+
                 fftComplex3[i] = fftComplex3[i] * complexDiff[i];
+                //fftComplex3[fftComplex3.Length - i - 1] = fftComplex3[fftComplex3.Length - i - 1] * complexDiff[i];
+
             }
 
             double[] finalDiffAmplitudes = new double[fftComplex3.Length];
@@ -103,14 +151,57 @@ namespace SignalProcessingTool
             for (int i = 0; i < finalDiffAmplitudes.Length; i++)
                 finalDiffAmplitudes[i] = (double)fftComplex3[i].Magnitude;
 
-            Collection<PointClass> pointsSpectrum3 = new Collection<PointClass>();
-            DrawSpectrum(pointsSpectrum3, finalDiffAmplitudes, Plot4, fftFreq);
+            Collection<PointClass> pointsSpectrum4 = new Collection<PointClass>();
+            DrawSpectrum(pointsSpectrum4, finalDiffAmplitudes, Plot4, fftFreq);
 
             double[] diffFinalSamples = InverseFFTMathNumerics(fftComplex3);
             short[] outputFinalSamples = diffFinalSamples.Select(s => (short)s).ToArray();
 
-            WriteFile(outputFinalSamples, "G:\\ModelWithDefectHole.wav");
+            WriteFile(outputFinalSamples, "G:\\DefectHole.wav");
         }
+
+        /// <summary>
+        /// Calculates the spectrum substraction.
+        /// </summary>
+        /// <param name="inputSpectrum">The input spectrum.</param>
+        /// <param name="spectrumToSubstract">A spectrum to substract.</param>
+        /// <returns></returns>
+        Complex[] CalculateSpectrumDiff(Complex[] inputSpectrum, Complex[] spectrumToSubstract)
+        {
+            Complex[] complexOutput = new Complex[inputSpectrum.Length];
+
+            // Complex[] ampCoeff = new double[signalLength / 2];
+
+            for (int i = 0; i < complexOutput.Length; i++)
+            {
+                complexOutput[i] = inputSpectrum[i] / spectrumToSubstract[i];
+            }
+
+            return complexOutput;
+        }
+
+        double[] CalculateDoubleSpectrumDiff(Complex[] inputSpectrum, Complex[] spectrumToSubstract)
+        {
+            double[] doubleOutput = new double[inputSpectrum.Length];
+
+            // Complex[] ampCoeff = new double[signalLength / 2];
+
+            for (int i = 0; i < doubleOutput.Length; i++)
+            {
+                doubleOutput[i] = Math.Abs(inputSpectrum[i].Magnitude / spectrumToSubstract[i].Magnitude);
+                //if (i > 5000)
+                //    doubleOutput[i] = 1;
+                //if (doubleOutput[i] > 2)
+                //    doubleOutput[i] = 2;
+                //if (doubleOutput[i] < 1)
+                //    doubleOutput[i] = 1;
+                //if (Math.Abs(doubleOutput[i]) > 5)
+                //     doubleOutput[i] = 1;
+            }
+
+            return doubleOutput;
+        }
+
         /// <summary>
         /// Fill model with data and process.
         /// </summary>
@@ -200,7 +291,7 @@ namespace SignalProcessingTool
         /// <param name="pointCollection">The collection of points.</param>
         /// <param name="valuesArray">The input array.</param>
         /// <param name="plotToDraw">The plot name.</param>
-        void DrawImpulse(Collection<PointClass> pointCollection, short[] valuesArray, OxyPlot.Wpf.Plot plotToDraw)
+        void DrawImpulse(Collection<PointClass> pointCollection, double[] valuesArray, OxyPlot.Wpf.Plot plotToDraw)
         {
             plotToDraw.Series[0].ItemsSource = pointCollection;
 
@@ -374,25 +465,7 @@ namespace SignalProcessingTool
             return inputSpectrum;
         }
 
-        /// <summary>
-        /// Calculates the spectrum substraction.
-        /// </summary>
-        /// <param name="inputSpectrum">The input spectrum.</param>
-        /// <param name="spectrumToSubstract">A spectrum to substract.</param>
-        /// <returns></returns>
-        Complex[] CalculateSpectrumDiff(Complex[] inputSpectrum, Complex[] spectrumToSubstract)
-        {
-            Complex[] complexOutput = new Complex[inputSpectrum.Length];
-
-           // Complex[] ampCoeff = new double[signalLength / 2];
-
-            for (int i = 0; i < complexOutput.Length; i++)
-            {
-                complexOutput[i] = inputSpectrum[i] / spectrumToSubstract[i];
-            }
-
-            return complexOutput;
-        }
+        
 
         /// <summary>
         /// Scales the specified input samples.
