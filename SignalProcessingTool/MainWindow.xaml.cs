@@ -47,69 +47,85 @@ namespace SignalProcessingTool
         /// </summary>
         public void SubstractWaveforms()
         {
-            // Read file with impact signal ===========================================================
 
-            double[] readFile = ReadWaveFile("G:\\ModelOutputCutFreq.wav");
+            #region
+            // Read file with source signal
+            double[] readFile = ReadWaveFile("G:\\HoleExperimental.wav"); 
 
             for (int i = 0; i < readFile.Length; i++)
             {
-                readFile[i] = readFile[i] * 0.1f;
+                readFile[i] = readFile[i] * 1f;
             }
 
             double[] fftValues = FFTMathNumerics(readFile).Item1;
             double[] fftFreq = FFTMathNumerics(readFile).Item2;
             Complex[] fftComplex = FFTMathNumerics(readFile).Item3;
-
+            
+            // Draw source signal spectrum
             Collection<PointClass> pointsSpectrum1 = new Collection<PointClass>();
             DrawSpectrum(pointsSpectrum1, fftValues, Plot1, fftFreq);
 
-            // Read file without impact signal (normal state) =========================================
-
-            readFile = ReadWaveFile("G:\\ModelOutputStock.wav");
+            // Read file with impact signal
+            readFile = ReadWaveFile("G:\\NormExperimental.wav"); 
 
             for (int i = 0; i < readFile.Length; i++)
             { 
-                readFile[i] = readFile[i] * 0.1f;
+                readFile[i] = readFile[i] * 1f;
             }
 
             double[] fftValues2 = FFTMathNumerics(readFile).Item1;
             Complex[] fftComplex2 = FFTMathNumerics(readFile).Item3;
 
-            Complex[] complexDiff = CalculateSpectrumDiff(fftComplex, fftComplex2); // Разница спектров
-
+            // Draw impact signal spectrum
             Collection<PointClass> pointsSpectrum2 = new Collection<PointClass>();
             DrawSpectrum(pointsSpectrum2, fftValues2, Plot2, fftFreq);
 
-            // Read source model file =================================================================
-
-            readFile = ReadWaveFile("W:\\HoleExperimental.wav");
+            // Read model signal
+            readFile = ReadWaveFile("G:\\NormExperimentalAnother.wav");
 
             for (int i = 0; i < readFile.Length; i++)
             {
-                readFile[i] = readFile[i] * 0.02f;
+                readFile[i] = readFile[i] * 1f;
             }
 
             Complex[] fftComplex3 = FFTMathNumerics(readFile).Item3;
+            #endregion
 
-            // Multiply model with impact coefficients array ==========================================
+            // Spectrum difference
+            Complex[] complexDiff = SpectrumDiff(fftComplex, fftComplex2);
 
-            for (int i = 0; i < signalLength; i++)
+            // Apply spectrum to signal
+            // "+" for SpectrumDiff() and "*" for SpectrumDivide() function
+            for (int i = 0; i < signalLength; i++) 
             {
-                fftComplex3[i] = fftComplex3[i] * complexDiff[i];
+                fftComplex3[i] = fftComplex3[i] + complexDiff[i]; 
             }
+
+            // Spectrum difference amplitudes
+            double[] diffSpectrum = new double[signalLength / 2];
+
+            for (int i = 0; i < diffSpectrum.Length; i++)
+                diffSpectrum[i] = (double)complexDiff[i].Magnitude; 
 
             double[] finalDiffAmplitudes = new double[fftComplex3.Length];
 
             for (int i = 0; i < finalDiffAmplitudes.Length; i++)
                 finalDiffAmplitudes[i] = (double)fftComplex3[i].Magnitude;
+            
+            // Draw spectrum difference
+            Collection<PointClass> pointsSpectrumDiff= new Collection<PointClass>();
+            DrawSpectrum(pointsSpectrumDiff, diffSpectrum, Plot3, fftFreq);
 
+            // Draw model spectrum with applied modification
             Collection<PointClass> pointsSpectrum3 = new Collection<PointClass>();
             DrawSpectrum(pointsSpectrum3, finalDiffAmplitudes, Plot4, fftFreq);
-
+            
+            // Inverse FFT and converting to short
             double[] diffFinalSamples = InverseFFTMathNumerics(fftComplex3);
             short[] outputFinalSamples = diffFinalSamples.Select(s => (short)s).ToArray();
-
-            WriteFile(outputFinalSamples, "G:\\ModelWithDefectHole.wav");
+            
+            // Processing result
+            WriteFile(outputFinalSamples, "G:\\Hole2.wav"); 
         }
         /// <summary>
         /// Fill model with data and process.
@@ -380,7 +396,7 @@ namespace SignalProcessingTool
         /// <param name="inputSpectrum">The input spectrum.</param>
         /// <param name="spectrumToSubstract">A spectrum to substract.</param>
         /// <returns></returns>
-        Complex[] CalculateSpectrumDiff(Complex[] inputSpectrum, Complex[] spectrumToSubstract)
+        Complex[] SpectrumDiff(Complex[] inputSpectrum, Complex[] spectrumToSubstract)
         {
             Complex[] complexOutput = new Complex[inputSpectrum.Length];
 
@@ -388,7 +404,22 @@ namespace SignalProcessingTool
 
             for (int i = 0; i < complexOutput.Length; i++)
             {
+                complexOutput[i] = inputSpectrum[i] - spectrumToSubstract[i];
+            }
+
+            return complexOutput;
+        }
+
+        Complex[] SpectrumDivide(Complex[] inputSpectrum, Complex[] spectrumToSubstract)
+        {
+            Complex[] complexOutput = new Complex[inputSpectrum.Length];
+
+            // Complex[] ampCoeff = new double[signalLength / 2];
+
+            for (int i = 0; i < complexOutput.Length; i++)
+            {
                 complexOutput[i] = inputSpectrum[i] / spectrumToSubstract[i];
+                //complexOutput[i] = 100;
             }
 
             return complexOutput;
