@@ -132,18 +132,14 @@ namespace SignalProcessingTool
 
             // Spectrum difference amplitudes
             double[] diffSpectrum = new double[signalLength / 2];
-
-            //for (int i = 0; i < diffSpectrum.Length; i++)
-            //    diffSpectrum[i] = Math.Log10((double)complexDiff[i].Magnitude) * 10; 
+            //diffSpectrum = ToLogScale(complexDiff, diffSpectrum);
 
             for (int i = 0; i < diffSpectrum.Length; i++)
                 diffSpectrum[i] =(double)complexDiff[i].Magnitude;
 
             double[] finalDiffAmplitudes = new double[fftComplex3.Length];
+            //finalDiffAmplitudes = ToLogScale(complexDiff, finalDiffAmplitudes);
 
-            //for (int i = 0; i < finalDiffAmplitudes.Length; i++)
-            //     finalDiffAmplitudes[i] = Math.Log10((double)fftComplex3[i].Magnitude) * 10;
-            
             for (int i = 0; i < finalDiffAmplitudes.Length; i++)
                  finalDiffAmplitudes[i] = (double)fftComplex3[i].Magnitude;
 
@@ -501,6 +497,15 @@ namespace SignalProcessingTool
             return inputSamples;
         }
 
+        double[] ToLogScale(Complex[] inputArray, double[] outputArray)
+        {
+            for (int i = 0; i < inputArray.Length; i++)
+            {
+                outputArray[i] = Math.Log10((double)inputArray[i].Magnitude) * 10;
+            }
+
+            return outputArray;
+        }
         /// <summary>
         /// Reads the wave file.
         /// </summary>
