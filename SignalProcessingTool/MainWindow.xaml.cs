@@ -17,6 +17,7 @@ using System.Drawing;
 using System.Diagnostics;
 using DSPLib;
 using NAudio;
+using System.IO;
 
 namespace SignalProcessingTool
 {
@@ -39,7 +40,7 @@ namespace SignalProcessingTool
 
         private void BtnCalcStart_Click(object sender, RoutedEventArgs e)
         {
-            signalLength = 44100;
+            signalLength = 32768;
             SubstractWaveforms();
         }
         /// <summary>
@@ -66,7 +67,7 @@ namespace SignalProcessingTool
             DrawSpectrum(pointsSpectrum1, fftValues, Plot1, fftFreq);
 
             // Read file with impact signal
-            readFile = ReadWaveFile("G:\\NormExperimental.wav"); 
+            readFile = ReadWaveFile("G:\\NormExperimentalAnother.wav"); 
 
             for (int i = 0; i < readFile.Length; i++)
             { 
@@ -93,32 +94,59 @@ namespace SignalProcessingTool
 
             // Spectrum difference
             Complex[] complexDiff = SpectrumDiff(fftComplex, fftComplex2);
-
+            double[] amps = AmpDiff(fftComplex, fftComplex2);
             // Inverse FFT and converting to short
             double[] diffSamples = InverseFFTMathNumerics(complexDiff);
             short[] outputSamples = diffSamples.Select(s => (short)s).ToArray();
 
             // Processing result
             WriteFile(outputSamples, "G:\\diff.wav");
+            
+            //Complex[] complexInput = new Complex[fftComplex3.Length];
+            //for (int i = 0; i < complexInput.Length / 2; i++)
+            //{
+            //    Complex tmp = new Complex(fftComplex3[i].Real + amps[i], fftComplex3[i].Imaginary);
+            //    complexInput[i] = tmp;
+            //}
 
-            // Apply spectrum to signal
-            // "+" for SpectrumDiff() and "*" for SpectrumDivide() function
-            for (int i = 0; i < signalLength; i++) 
+            StreamReader reader = new StreamReader("G:\\diffFunction.txt");
+
+            var list = new List<double>();
+
+            while (!reader.EndOfStream)
             {
-                fftComplex3[i] = fftComplex3[i] + complexDiff[i]; 
+                var line = reader.ReadLine();
+                double value = 0;
+
+                if (!string.IsNullOrWhiteSpace(line) && double.TryParse(line, out value))
+                    list.Add(value);
+            }
+
+            // Apply spectrum diff to signal
+            // "+" for SpectrumDiff() and "*" for SpectrumDivide() function
+            for (int i = 0; i < signalLength; i++)
+            {
+                fftComplex3[i] = fftComplex3[i] + complexDiff[i]; //+amps[i]; // Math.Abs(list[i]);
+               // fftComplex3[fftComplex3.Length - i - 1] = fftComplex3[fftComplex3.Length - i - 1] * complexDiff[i];
             }
 
             // Spectrum difference amplitudes
             double[] diffSpectrum = new double[signalLength / 2];
 
+            //for (int i = 0; i < diffSpectrum.Length; i++)
+            //    diffSpectrum[i] = Math.Log10((double)complexDiff[i].Magnitude) * 10; 
+
             for (int i = 0; i < diffSpectrum.Length; i++)
-                diffSpectrum[i] = Math.Log10((double)complexDiff[i].Magnitude) * 10; 
+                diffSpectrum[i] =(double)complexDiff[i].Magnitude;
 
             double[] finalDiffAmplitudes = new double[fftComplex3.Length];
 
-            for (int i = 0; i < finalDiffAmplitudes.Length; i++)
-                finalDiffAmplitudes[i] = Math.Log10((double)fftComplex3[i].Magnitude) * 10;
+            //for (int i = 0; i < finalDiffAmplitudes.Length; i++)
+            //     finalDiffAmplitudes[i] = Math.Log10((double)fftComplex3[i].Magnitude) * 10;
             
+            for (int i = 0; i < finalDiffAmplitudes.Length; i++)
+                 finalDiffAmplitudes[i] = (double)fftComplex3[i].Magnitude;
+
             // Draw spectrum difference
             Collection<PointClass> pointsSpectrumDiff= new Collection<PointClass>();
             DrawSpectrum(pointsSpectrumDiff, diffSpectrum, Plot3, fftFreq);
@@ -132,6 +160,7 @@ namespace SignalProcessingTool
             short[] outputFinalSamples = diffFinalSamples.Select(s => (short)s).ToArray();
             
             // Processing result
+            
             WriteFile(outputFinalSamples, "G:\\Hole2.wav"); 
         }
         /// <summary>
@@ -175,16 +204,19 @@ namespace SignalProcessingTool
             Complex[] fftComplex = FFTMathNumerics(amplifiedSamples).Item3;
 
             Collection<PointClass> pointsSpectrum = new Collection<PointClass>();
+
             DrawSpectrum(pointsSpectrum, fftValues, Plot2, fftFreq);
 
             Complex[] equalizedSignal = ApplySpectrumFilter(fftComplex);
-
             double[] fftValuesEq = new double[32768];
 
             for (int i = 0; i < fftValuesEq.Length; i++)
+            {
                 fftValuesEq[i] = (double)equalizedSignal[i].Magnitude;
+            }
 
             Collection<PointClass> pointsSpectrumEq = new Collection<PointClass>();
+
             DrawSpectrum(pointsSpectrumEq, fftValuesEq, Plot3, fftFreq);
 
             double[] equalizedSamples = InverseFFTMathNumerics(equalizedSignal);
@@ -211,10 +243,9 @@ namespace SignalProcessingTool
             Complex[] fftComplex = FFTMathNumerics(readFile).Item3;
             Complex[] equalizedSignal = ApplySpectrumFilter(fftComplex);
             double[] equalizedSamples = InverseFFTMathNumerics(equalizedSignal);
-
             short[] outputSamples = equalizedSamples.Select(s => (short)s).ToArray();
-            WriteFile(outputSamples, "G:\\InverseFFTSignal.wav");
 
+            WriteFile(outputSamples, "G:\\InverseFFTSignal.wav");
         }
 
         /// <summary>
@@ -284,11 +315,8 @@ namespace SignalProcessingTool
             double[] wCoefs = DSP.Window.Coefficients(DSP.Window.Type.Hamming, length);
             double[] wInputData = DSP.Math.Multiply(tempArray, wCoefs);
             double wScaleFactor = DSP.Window.ScaleFactor.Signal(wCoefs);
-
             DSPLib.FFT fft = new DSPLib.FFT();
-
             fft.Initialize(length, length * 3);
-
             Complex[] cSpectrum = fft.Execute(wInputData);
             spectrum = DSP.ConvertComplex.ToMagnitude(cSpectrum);
 
@@ -303,11 +331,9 @@ namespace SignalProcessingTool
             }
 
             spectrum = DSP.Math.Multiply(spectrum, wScaleFactor);
-
             double[] freqSpan = fft.FrequencySpan(samplingRate);
-
             var tuple = new Tuple<double[], double[]>(spectrum, freqSpan);
-            
+
             return tuple;
         }
 
@@ -335,16 +361,15 @@ namespace SignalProcessingTool
             }
                        
             MathNet.Numerics.IntegralTransforms.Fourier.Forward(complexInput);
-            
             double[] outSamples = new double[complexInput.Length];
 
             for (int i = 0; i < outSamples.Length; i++)
             {
-                outSamples[i] = Math.Log10((double)complexInput[i].Magnitude) * 10;
+               //outSamples[i] = Math.Log10((double)complexInput[i].Magnitude) * 10;
+               outSamples[i] = (double)complexInput[i].Magnitude;
             }  
 
             double[] freqSpan = MathNet.Numerics.IntegralTransforms.Fourier.FrequencyScale(signalLength, 44100);
-
             var tuple = new Tuple<double[], double[], Complex[]>(outSamples, freqSpan, complexInput);
 
             return tuple;
@@ -366,11 +391,12 @@ namespace SignalProcessingTool
             }
 
             MathNet.Numerics.IntegralTransforms.Fourier.Inverse(ifftSpectrum);
-
             double[] outSamples = new double[ifftSpectrum.Length];
 
             for (int i = 0; i < outSamples.Length; i++)
+            {
                 outSamples[i] = (double)ifftSpectrum[i].Real;
+            }
 
             return outSamples;
         }
@@ -417,14 +443,24 @@ namespace SignalProcessingTool
         {
             Complex[] complexOutput = new Complex[inputSpectrum.Length];
 
-           // Complex[] ampCoeff = new double[signalLength / 2];
-
             for (int i = 0; i < complexOutput.Length; i++)
             {
                 complexOutput[i] = inputSpectrum[i] - spectrumToSubstract[i];
             }
 
             return complexOutput;
+        }
+
+        double[] AmpDiff(Complex[] inputSpectrum, Complex[] spectrumToSubstract)
+        {
+            double[] amp = new double[inputSpectrum.Length];
+
+            for (int i = 0; i < amp.Length; i++)
+            {
+                amp[i] = inputSpectrum[i].Magnitude - spectrumToSubstract[i].Magnitude;
+            }
+
+            return amp;
         }
 
         Complex[] SpectrumDivide(Complex[] inputSpectrum, Complex[] spectrumToSubstract)
@@ -461,6 +497,7 @@ namespace SignalProcessingTool
             {
                 inputSamples[i] = (inputSamples[i] / max / 2 * 32768);
             }
+
             return inputSamples;
         }
 
