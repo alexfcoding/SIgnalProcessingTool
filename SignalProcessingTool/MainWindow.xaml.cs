@@ -43,6 +43,12 @@ namespace SignalProcessingTool
             signalLength = 32768;
             SubstractWaveforms();
         }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            signalLength = 44100;
+            GenerateAcousticImpulse();
+        }
         /// <summary>
         /// Read files, substract spectrum and inverse FFT.
         /// </summary>
@@ -51,7 +57,7 @@ namespace SignalProcessingTool
 
             #region
             // Read file with source signal
-            double[] readFile = ReadWaveFile("G:\\HoleExperimental.wav"); 
+            double[] readFile = ReadWaveFile("G:\\ObjectonTop7.wav"); 
 
             for (int i = 0; i < readFile.Length; i++)
             {
@@ -67,7 +73,7 @@ namespace SignalProcessingTool
             DrawSpectrum(pointsSpectrum1, fftValues, Plot1, fftFreq);
 
             // Read file with impact signal
-            readFile = ReadWaveFile("G:\\NormExperimentalAnother.wav"); 
+            readFile = ReadWaveFile("G:\\WithoutObjectOnTop7.wav"); 
 
             for (int i = 0; i < readFile.Length; i++)
             { 
@@ -82,7 +88,7 @@ namespace SignalProcessingTool
             DrawSpectrum(pointsSpectrum2, fftValues2, Plot2, fftFreq);
 
             // Read model signal
-            readFile = ReadWaveFile("G:\\ModelNorm.wav");
+            readFile = ReadWaveFile("G:\\CalculatedSignal.wav");
 
             for (int i = 0; i < readFile.Length; i++)
             {
@@ -93,7 +99,7 @@ namespace SignalProcessingTool
             #endregion
 
             // Spectrum difference
-            Complex[] complexDiff = SpectrumDiff(fftComplex, fftComplex2);
+            Complex[] complexDiff = SpectrumDivide(fftComplex, fftComplex2);
             double[] amps = AmpDiff(fftComplex, fftComplex2);
             // Inverse FFT and converting to short
             double[] diffSamples = InverseFFTMathNumerics(complexDiff);
@@ -126,7 +132,7 @@ namespace SignalProcessingTool
             // "+" for SpectrumDiff() and "*" for SpectrumDivide() function
             for (int i = 0; i < signalLength; i++)
             {
-                fftComplex3[i] = fftComplex3[i] + complexDiff[i]; //+amps[i]; // Math.Abs(list[i]);
+                fftComplex3[i] = fftComplex3[i] * complexDiff[i]; //+amps[i]; // Math.Abs(list[i]);
                // fftComplex3[fftComplex3.Length - i - 1] = fftComplex3[fftComplex3.Length - i - 1] * complexDiff[i];
             }
 
@@ -157,7 +163,7 @@ namespace SignalProcessingTool
             
             // Processing result
             
-            WriteFile(outputFinalSamples, "G:\\Hole2.wav"); 
+            WriteFile(outputFinalSamples, "G:\\HoleResult.wav"); 
         }
         /// <summary>
         /// Fill model with data and process.
@@ -167,7 +173,7 @@ namespace SignalProcessingTool
             FullAcousticModel Model1 = new FullAcousticModel();
             
             Model1.Pi = Math.PI;
-            Model1.Diameter = 0.062;
+            Model1.Diameter = Convert.ToDouble(pipeDiameterTextBox.Text);
             Model1.Thickness = 0.005;
             Model1.Density = 7800;
             Model1.PipeLength = 6;
@@ -198,6 +204,10 @@ namespace SignalProcessingTool
             double[] fftValues = FFTMathNumerics(amplifiedSamples).Item1;
             double[] fftFreq = FFTMathNumerics(amplifiedSamples).Item2;
             Complex[] fftComplex = FFTMathNumerics(amplifiedSamples).Item3;
+
+            Collection<PointClass> pointsModel = new Collection<PointClass>();
+            short[] amplifiedSamplesShort = amplifiedSamples.Select(s => (short)s).ToArray();
+            DrawImpulse(pointsModel, amplifiedSamplesShort, Plot1);
 
             Collection<PointClass> pointsSpectrum = new Collection<PointClass>();
 
@@ -506,6 +516,7 @@ namespace SignalProcessingTool
 
             return outputArray;
         }
+
         /// <summary>
         /// Reads the wave file.
         /// </summary>
@@ -548,10 +559,9 @@ namespace SignalProcessingTool
             writer.Dispose();
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void PipeDiameterTextBox_Copy2_TextChanged(object sender, TextChangedEventArgs e)
         {
-            signalLength = 44100;
-            GenerateAcousticImpulse();
+
         }
     }
 

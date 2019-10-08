@@ -7,18 +7,34 @@
         xmlns:local="clr-namespace:SignalProcessingTool"
         
         mc:Ignorable="d"
-        Title="SignalProcessingTool" Height="910.286" Width="1600">
+        Title="SignalProcessingTool" Height="910.286" Width="1212.667">
 
 
 
-    <Grid Name="grid1" Margin="0,0,48.286,-0.571">
+    <Grid Name="grid1" Margin="0,0,5.5,-1" HorizontalAlignment="Right" Width="1192">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
             <ColumnDefinition Width="0*"/>
         </Grid.ColumnDefinitions>
-        <Button x:Name="btnCalcStart" Content="Apply spectrum function" HorizontalAlignment="Left" Margin="13,844,0,0" VerticalAlignment="Top" Width="162" Click="BtnCalcStart_Click" Height="28"/>
-
-        <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="10,10,10.714,675.285">
+        <Menu Height="25" VerticalAlignment="Top">
+            <MenuItem Header="File">
+                <MenuItem Header="New ..." ></MenuItem>
+                <MenuItem Header="Open ..." >
+                    <MenuItem Header="Model"></MenuItem>
+                    <MenuItem Header="..." ></MenuItem>
+                </MenuItem>
+                <Separator />
+                <MenuItem Header="Exit" ></MenuItem>
+            </MenuItem>
+            <MenuItem Header="Edit" ></MenuItem>
+            <MenuItem Header="View" ></MenuItem>
+        </Menu>
+        <Button x:Name="btnCalcStart" Content="Apply spectrum function" HorizontalAlignment="Left" Margin="19,472,0,0" VerticalAlignment="Top" Width="225" Click="BtnCalcStart_Click" Height="28"/>
+        <GroupBox Header="Pipe parameters" HorizontalAlignment="Left" Height="375" Margin="19,47,0,0" VerticalAlignment="Top" Width="225"/>
+        <oxy:Plot Name="Plot1" Title="{Binding Title}" Margin="265,44,63,642">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -38,7 +54,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot2" Title="{Binding Title}" Margin="10,221,10.714,465.285">
+        <oxy:Plot Name="Plot2" Title="{Binding Title}" Margin="265,242,63,444">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -57,7 +73,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot3" Title="{Binding Title}" Margin="13,432,7.714,254.285">
+        <oxy:Plot Name="Plot3" Title="{Binding Title}" Margin="265,445,63,241">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -76,7 +92,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot4" Title="{Binding Title}" Margin="13,634,7.714,52.285">
+        <oxy:Plot Name="Plot4" Title="{Binding Title}" Margin="265,648,63,38">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -95,7 +111,7 @@
 
         </oxy:Plot>
 
-        <oxy:Plot Name="Plot5" Title="{Binding Title}" Margin="10,632,10.714,104.285" Visibility="Hidden">
+        <oxy:Plot Name="Plot5" Title="{Binding Title}" Margin="10,196,11,584" Visibility="Hidden">
             <oxy:Plot.Axes>
                 <oxy:LinearAxis Position="Left"/>
                 <oxy:LinearAxis Position="Bottom"/>
@@ -113,6 +129,33 @@
             </oxy:Plot.Series>
 
         </oxy:Plot>
-        <Button Content="Generate acoustic model" HorizontalAlignment="Left" Margin="180,844,0,0" VerticalAlignment="Top" Width="155" Height="28" Click="Button_Click"/>
+        <Button Content="Generate acoustic model" HorizontalAlignment="Left" Margin="19,439,0,0" VerticalAlignment="Top" Width="225" Height="28" Click="Button_Click"/>
+
+        <TextBox x:Name ="pipeDiameterTextBox" HorizontalAlignment="Left" Height="24" Margin="135,68,0,0" TextWrapping="Wrap" Text="0,062" VerticalAlignment="Top" Width="90"/>
+        <Label Content="Diameter" HorizontalAlignment="Left" Margin="25,64,0,0" VerticalAlignment="Top"/>
+        <Label Content="Thickness" HorizontalAlignment="Left" Margin="25,90,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name ="pipeThicknessTextBox" HorizontalAlignment="Left" Height="24" Margin="135,94,0,0" TextWrapping="Wrap" Text="0,005" VerticalAlignment="Top" Width="90"/>
+        <Label Content="Density" HorizontalAlignment="Left" Margin="25,116,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name ="pipeDensityTextBox" HorizontalAlignment="Left" Height="24" Margin="135,120,0,0" TextWrapping="Wrap" Text="7800" VerticalAlignment="Top" Width="90"/>
+        <Label Content="Length" HorizontalAlignment="Left" Margin="25,142,0,0" VerticalAlignment="Top"/>
+        <Label Content="A1" HorizontalAlignment="Left" Margin="25,168,0,0" VerticalAlignment="Top"/>
+        <Label Content="A2" HorizontalAlignment="Left" Margin="25,194,0,0" VerticalAlignment="Top"/>
+        <Label Content="A3" HorizontalAlignment="Left" Margin="25,220,0,0" VerticalAlignment="Top"/>
+        <Label Content="Signal duration" HorizontalAlignment="Left" Margin="25,246,0,0" VerticalAlignment="Top"/>
+        <Label Content="Contact time" HorizontalAlignment="Left" Margin="25,272,0,0" VerticalAlignment="Top"/>
+        <Label Content="ti" HorizontalAlignment="Left" Margin="25,298,0,0" VerticalAlignment="Top"/>
+        <Label Content="Sample rate" HorizontalAlignment="Left" Margin="25,324,0,0" VerticalAlignment="Top"/>
+        <Label Content="Number of modes" HorizontalAlignment="Left" Margin="25,350,0,0" VerticalAlignment="Top"/>
+        <Label Content="Young's modulus" HorizontalAlignment="Left" Margin="25,376,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name ="pipeLengthTextBox" HorizontalAlignment="Left" Height="24" Margin="135,146,0,0" TextWrapping="Wrap" Text="6" VerticalAlignment="Top" Width="90" TextChanged="PipeDiameterTextBox_Copy2_TextChanged"/>
+        <TextBox x:Name ="pipeA1TextBox" HorizontalAlignment="Left" Height="24" Margin="135,172,0,0" TextWrapping="Wrap" Text="0,2" VerticalAlignment="Top" Width="90"/>
+        <TextBox x:Name ="pipeA2TextBox" HorizontalAlignment="Left" Height="24" Margin="135,198,0,0" TextWrapping="Wrap" Text="100" VerticalAlignment="Top" Width="90"/>
+        <TextBox x:Name ="pipeA3TextBox" HorizontalAlignment="Left" Height="24" Margin="135,224,0,0" TextWrapping="Wrap" Text="10000000" VerticalAlignment="Top" Width="90"/>
+        <TextBox x:Name ="signalDurationTextBox" HorizontalAlignment="Left" Height="24" Margin="135,250,0,0" TextWrapping="Wrap" Text="1" VerticalAlignment="Top" Width="90"/>
+        <TextBox x:Name ="contactTimeTextBox" HorizontalAlignment="Left" Height="24" Margin="135,276,0,0" TextWrapping="Wrap" Text="0.00004" VerticalAlignment="Top" Width="90"/>
+        <TextBox x:Name ="tiTextBox" HorizontalAlignment="Left" Height="24" Margin="135,302,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="90" Text="0.000022"/>
+        <TextBox x:Name ="sampleRateTextBox" HorizontalAlignment="Left" Height="24" Margin="135,328,0,0" TextWrapping="Wrap" Text="44100" VerticalAlignment="Top" Width="90"/>
+        <TextBox x:Name ="modesNumberTextBox" HorizontalAlignment="Left" Height="24" Margin="135,354,0,0" TextWrapping="Wrap" Text="500" VerticalAlignment="Top" Width="90"/>
+        <TextBox x:Name ="youngsModulusTextBox" HorizontalAlignment="Left" Height="24" Margin="135,380,0,0" TextWrapping="Wrap" Text="200000000000" VerticalAlignment="Top" Width="90"/>
     </Grid>
 </Window>
