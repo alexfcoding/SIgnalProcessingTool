@@ -57,7 +57,7 @@ namespace SignalProcessingTool
 
             #region
             // Read file with source signal
-            double[] readFile = ReadWaveFile("G:\\ObjectonTop7.wav"); 
+            double[] readFile = ReadWaveFile("recordings\\ObjectonTop7.wav"); 
 
             for (int i = 0; i < readFile.Length; i++)
             {
@@ -73,7 +73,7 @@ namespace SignalProcessingTool
             DrawSpectrum(pointsSpectrum1, fftValues, Plot1, fftFreq);
 
             // Read file with impact signal
-            readFile = ReadWaveFile("G:\\WithoutObjectOnTop7.wav"); 
+            readFile = ReadWaveFile("recordings\\WithoutObjectOnTop7.wav"); 
 
             for (int i = 0; i < readFile.Length; i++)
             { 
@@ -88,7 +88,7 @@ namespace SignalProcessingTool
             DrawSpectrum(pointsSpectrum2, fftValues2, Plot2, fftFreq);
 
             // Read model signal
-            readFile = ReadWaveFile("G:\\CalculatedSignal.wav");
+            readFile = ReadWaveFile("recordings\\CalculatedSignal.wav");
 
             for (int i = 0; i < readFile.Length; i++)
             {
@@ -106,7 +106,7 @@ namespace SignalProcessingTool
             short[] outputSamples = diffSamples.Select(s => (short)s).ToArray();
 
             // Processing result
-            WriteFile(outputSamples, "G:\\diff.wav");
+            WriteFile(outputSamples, "diff.wav");
             
             //Complex[] complexInput = new Complex[fftComplex3.Length];
             //for (int i = 0; i < complexInput.Length / 2; i++)
@@ -115,7 +115,7 @@ namespace SignalProcessingTool
             //    complexInput[i] = tmp;
             //}
 
-            StreamReader reader = new StreamReader("G:\\diffFunction.txt");
+            StreamReader reader = new StreamReader("diffFunction.txt");
 
             var list = new List<double>();
 
@@ -163,10 +163,11 @@ namespace SignalProcessingTool
             
             // Processing result
             
-            WriteFile(outputFinalSamples, "G:\\HoleResult.wav"); 
+            WriteFile(outputFinalSamples, "HoleResult.wav"); 
         }
+
         /// <summary>
-        /// Fill model with data and process.
+        /// Fill model with data and process
         /// </summary>
         public void GenerateAcousticImpulse()
         {
@@ -228,7 +229,7 @@ namespace SignalProcessingTool
             double[] equalizedSamples = InverseFFTMathNumerics(equalizedSignal);
             short[] outputSamples = equalizedSamples.Select(s => (short)s).ToArray();
 
-            WriteFile(outputSamples, "G:\\ModelOutputStock.wav");
+            WriteFile(outputSamples, "ModelOutputStock.wav");
         }
 
         /// <summary>
@@ -251,7 +252,7 @@ namespace SignalProcessingTool
             double[] equalizedSamples = InverseFFTMathNumerics(equalizedSignal);
             short[] outputSamples = equalizedSamples.Select(s => (short)s).ToArray();
 
-            WriteFile(outputSamples, "G:\\InverseFFTSignal.wav");
+            WriteFile(outputSamples, "InverseFFTSignal.wav");
         }
 
         /// <summary>
@@ -544,8 +545,7 @@ namespace SignalProcessingTool
 
             return dataStorage;
         }
-
-
+        
         /// <summary>
         /// Writes the wave file.
         /// </summary>
@@ -565,125 +565,10 @@ namespace SignalProcessingTool
         }
     }
 
-    /// <summary>
-    /// A full model of acoustic signal
-    /// </summary>
-    public class FullAcousticModel
-    {
-        public FullAcousticModel() { }
-
-        public FullAcousticModel(double diameter, double thickness, double density, double pipeLength, double xCoordinate, double a1, double a2, double a3, double signalDuration, double tc, double ti, double fd1, double modNumber, double[] cn1, double[] delta, double[] w1, double[] oi1, double[] sum, double e1, double j1, double mass1, double a4, double pi)
-        {
-            Diameter = diameter;
-            Thickness = thickness;
-            Density = density;
-            PipeLength = pipeLength;
-            XCoordinate = xCoordinate;
-            A1 = a1;
-            A2 = a2;
-            A3 = a3;
-            SignalDuration = signalDuration;
-            Tc = tc;
-            Ti = ti;
-            Fd = fd1;
-            ModNumber = modNumber;
-            Cn = cn1;
-            Delta = delta;
-            W = w1;
-            Oi = oi1;
-            Sum = sum;
-            E = e1;
-            J = j1;
-            Mass = mass1;
-            A4 = a4;
-            Pi = pi;
-        }
-
-        public virtual void ComputeModel()
-        {
-            int k = 0;
-
-            for (int i = 1; i < ModNumber; i = i + 2)
-            {
-                Cn[k] = Pi / 2 * (2 * i + 1);
-                Delta[k] = Math.Sqrt(0.5 * (A1 * Math.Pow(i, 4) * Math.Pow(Pi, 4) / Math.Pow(PipeLength, 4) + A2));
-                W[k] = Math.Sqrt(A3 + A4 * Math.Pow(i, 4) * Math.Pow(Pi, 4) / Math.Pow(PipeLength, 4));
-                Oi[k] = Math.Sqrt(Math.Pow(W[k], 2) - Math.Pow(Delta[k], 2));
-                k++;
-            }
-
-            k = 0;
-
-            double m1, m2, m3, rotator;
-
-            for (int i = 1; i < SignalDuration * Fd; i++)
-            {
-                for (int j = 1; j < ModNumber; j = j + 2)
-                {
-                    rotator = Math.Pow(-1, (j - 1) / 2);
-
-                    m1 = 2 * Math.Exp(Delta[k] * Tc) * Delta[k] * Pi / Tc;
-
-                    m2 = Pi * Math.Exp(Delta[k] * Tc) / Tc / Oi[k] * (2 * Math.Pow(Delta[k], 2) - Math.Pow(W[k], 2) + Math.Pow(Pi, 2) / Math.Pow(Tc, 2));
-
-                    m3 = Oi[k] * Tc;
-
-                    Sum[i] = Sum[i] + rotator * Math.Exp(-Delta[k] * Ti) * Math.Sin(j * Pi * XCoordinate / PipeLength) /
-                    (Math.Pow((Math.Pow(W[k], 2) - Math.Pow(Pi, 2) / Math.Pow(Tc, 2)), 2) + 4 * Math.Pow(Pi, 2) * Math.Pow(Delta[k], 2) / Math.Pow(Tc, 2)) *
-                    ((m1 * Math.Cos(m3) - m2 * Math.Sin(m3) + 2 * Pi * Delta[k] / Tc) * Math.Cos(Oi[k] * Ti) + (m2 * Math.Cos(m3) + m1 * Math.Sin(m3) +
-                    Pi / Tc / Oi[k] * (2 * Math.Pow(Delta[k], 2) - Math.Pow(W[k], 2) + Math.Pow(Pi, 2) / Math.Pow(Tc, 2))) * Math.Sin(Oi[k] * Ti));
-
-                    k++;
-                }
-
-                k = 0;
-                
-                Ti = Ti + (double)(1 / Fd);
-            }
-        }
-
-        public double Diameter { get; set; }
-        public double Thickness { get; set; }
-        public double Density { get; set; }
-        public double PipeLength { get; set; }
-        public double XCoordinate { get; set; }
-        public double A1 { get; set; }
-        public double A2 { get; set; }
-        public double A3 { get; set; }
-        public double SignalDuration { get; set; }
-        public double Tc { get; set; }
-        public double Ti { get; set; }
-        public double Fd { get; set; }
-        public double ModNumber { get; set; }
-        public double[] Cn { get; set; }
-        public double[] Delta { get; set; }
-        public double[] W { get; set; }
-        public double[] Oi { get; set; }
-        public double[] Sum { get; set; }
-        public double E { get; set; }
-        public double J { get; set; }
-        public double Mass { get; set; }
-        public double A4 { get; set; }
-        public double Pi { get; set; }
-    }
-
-    /// <summary>
-    /// A simple model of acoustic signal
-    /// </summary>
-    /// <seealso cref="SignalProcessingTool.FullAcousticModel" />
-    public class SimpleAcousticModel : FullAcousticModel
-    {
-        public override void ComputeModel()
-        {
-            base.ComputeModel();
-        }
-    }
-
     public class PointClass
     {
         public double xPoint { get; set; }
         public double yPoint { get; set; }
         public double yPointMax { get; set; }
     }
-
 }
